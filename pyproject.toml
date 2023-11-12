@@ -14,24 +14,25 @@ repository = "https://github.com/lvieirajr/vtex-python"
 documentation = "https://github.com/lvieirajr/vtex-python"
 keywords = ["vtex", "sdk", "client"]
 classifiers = [
-  "Typing :: Typed",
-  "Intended Audience :: Developers",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Operating System :: OS Independent",
-  "Operating System :: POSIX",
-  "Operating System :: MacOS",
-  "Operating System :: POSIX :: Linux",
-  "Operating System :: Microsoft :: Windows",
-  "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Development Status :: 3 - Alpha"
 ]
 packages = [
     {include = "vtex"},
 ]
-version = "0.0.0"
+version = "0.0.0a0"
 
 [build-system]
 requires = ["poetry-core"]
