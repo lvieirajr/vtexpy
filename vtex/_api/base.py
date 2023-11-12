@@ -114,24 +114,36 @@ class BaseAPI:
 
     def _get_headers(
         self: "BaseAPI",
-        headers: Optional[HeaderTypes],
+        headers: Optional[HeaderTypes] = None,
         app_key: Optional[str] = None,
         app_token: Optional[str] = None,
+        content_type: Optional[str] = None,
+        accept: Optional[str] = None,
     ) -> Headers:
         request_headers = Headers(headers=headers)
 
         if app_key:
             request_headers[self._APP_KEY_HEADER] = app_key
-        elif self._APP_KEY_HEADER not in request_headers and self._app_key:
+        elif not request_headers.get(self._APP_KEY_HEADER) and self._app_key:
             request_headers[self._APP_KEY_HEADER] = self._app_key
-        elif self._APP_KEY_HEADER not in request_headers:
+        elif not request_headers.get(self._APP_KEY_HEADER):
             raise ValueError("Missing app_key")
 
         if app_token:
             request_headers[self._APP_TOKEN_HEADER] = app_token
-        elif self._APP_TOKEN_HEADER not in request_headers and self._app_token:
+        elif not request_headers.get(self._APP_TOKEN_HEADER) and self._app_token:
             request_headers[self._APP_TOKEN_HEADER] = self._app_token
-        elif self._APP_TOKEN_HEADER not in request_headers:
+        elif not request_headers.get(self._APP_TOKEN_HEADER):
             raise ValueError("Missing app_token")
+
+        request_headers["Content-Type"] = (
+            content_type
+            or request_headers.get("Content-Type")
+            or "application/json; charset=utf-8"
+        )
+
+        request_headers["Accept"] = (
+            accept or request_headers.get("Accept") or "application/json"
+        )
 
         return request_headers
