@@ -1,0 +1,69 @@
+[tool.poetry]
+name = "vtexpy"
+description = "Unnoficial Python SDK for VTEX API."
+readme = "README.md"
+license = "MIT"
+authors = [
+    "Luis Vieira <lvieira@lvieira.com>",
+]
+maintainers = [
+    "Luis Vieira <lvieira@lvieira.com>",
+]
+homepage = "https://github.com/lvieirajr/vtex-python"
+repository = "https://github.com/lvieirajr/vtex-python"
+documentation = "https://github.com/lvieirajr/vtex-python"
+keywords = ["vtex", "sdk", "client"]
+classifiers = [
+  "Typing :: Typed",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: OS Independent",
+  "Operating System :: POSIX",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: Microsoft :: Windows",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+packages = [
+    {include = "vtex"},
+]
+version = "0.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+httpx = {version = "^0.25", extras = ["http2"]}
+
+[tool.poetry.group.dev.dependencies]
+ipdb = {version = "^0.13"}
+mock = {version = "^5.1"}
+mypy = {version = "^1.7"}
+pytest = {version = "^7.4"}
+pytest-cov = {version = "^4.1"}
+ruff = {version = "^0.1"}
+safety = {version = "^2.3"}
+
+
+[tool.pytest.ini_options]
+addopts = "-s -vv"
+mock_use_standalone_module = true
+
+
+[tool.mypy]
+ignore_missing_imports = true
+namespace_packages = true
+plugins = []
+strict = true
+
+
+[tool.ruff]
+target-version = "py311"
+ignore = ["COM812", "ISC001"]
+select = ["B", "C4", "C90", "COM", "E", "EXE", "F", "I", "ISC", "N", "S", "T10", "T20", "W"]
