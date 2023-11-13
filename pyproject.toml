@@ -12,7 +12,7 @@ maintainers = [
 homepage = "https://github.com/lvieirajr/vtex-python"
 repository = "https://github.com/lvieirajr/vtex-python"
 documentation = "https://github.com/lvieirajr/vtex-python"
-keywords = ["vtex", "sdk", "client"]
+keywords = ["vtex", "sdk", "client", "api"]
 classifiers = [
     "Typing :: Typed",
     "Intended Audience :: Developers",
@@ -32,7 +32,7 @@ classifiers = [
 packages = [
     {include = "vtex"},
 ]
-version = "0.0.0a2"
+version = "0.0.0a3"
 
 [build-system]
 requires = ["poetry-core"]
