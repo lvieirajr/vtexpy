@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "vtexpy"
-description = "Unnoficial Python SDK for VTEX API."
+description = "Unofficial Python SDK for VTEX API."
 readme = "README.md"
 license = "MIT"
 authors = [

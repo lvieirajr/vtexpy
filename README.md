@@ -1,6 +1,6 @@
 # VTEXPY
 
-Unnoficial Python SDK for VTEX API.
+Unofficial Python SDK for VTEX API.
 
 
 # Development

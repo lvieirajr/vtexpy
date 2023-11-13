@@ -1,16 +1,21 @@
 from logging import getLogger
 from typing import Any, Optional
+from urllib.parse import urljoin
 
 from httpx import (
     Client,
     CookieConflict,
     Headers,
     HTTPError,
+    HTTPStatusError,
     InvalidURL,
+    Response,
     StreamError,
 )
 
-from .._exceptions import RequestError
+from .._config import Config
+from .._constants import APP_KEY_HEADER, APP_TOKEN_HEADER
+from .._exceptions import RequestError, VTEXError
 from .._response import VTEXResponse
 from .._types import (
     CookieTypes,
@@ -25,68 +30,45 @@ from .._types import (
 
 class BaseAPI:
     """
-    Base client for all VTEX API collections.
+    Base client for VTEX API.
     """
 
-    _BASE_URL = "https://{account_name}.{environment}.com.br/{endpoint}"
-    _APP_KEY_HEADER = "X-VTEX-API-AppKey"
-    _APP_TOKEN_HEADER = "X-VTEX-API-AppToken"  # noqa: S105
-    _DEFAULT_TIMEOUT = 60
-
-    def __init__(
-        self: "BaseAPI",
-        account_name: Optional[str] = None,
-        app_key: Optional[str] = None,
-        app_token: Optional[str] = None,
-        environment: Optional[str] = None,
-    ) -> None:
-        self._account_name = account_name
-        self._app_key = app_key
-        self._app_token = app_token
-        self._environment = environment
+    def __init__(self: "BaseAPI", config: Optional[Config] = None) -> None:
+        self._config = config or Config()
         self._logger = getLogger(type(self).__name__)
 
     def _request(
         self: "BaseAPI",
         method: HttpMethodTypes,
         endpoint: str,
-        content: Optional[RequestContent] = None,
-        data: Optional[RequestData] = None,
-        files: Optional[RequestFiles] = None,
-        json: Optional[Any] = None,
-        params: Optional[QueryParamTypes] = None,
         headers: Optional[HeaderTypes] = None,
         cookies: Optional[CookieTypes] = None,
-        timeout: int = _DEFAULT_TIMEOUT,
-        **kwargs: Any,
+        params: Optional[QueryParamTypes] = None,
+        json: Optional[Any] = None,
+        data: Optional[RequestData] = None,
+        content: Optional[RequestContent] = None,
+        files: Optional[RequestFiles] = None,
+        config: Optional[Config] = None,
     ) -> VTEXResponse:
-        url = self._get_url(
-            endpoint=endpoint,
-            account_name=kwargs.get("account_name"),
-            environment=kwargs.get("environment"),
-        )
-        headers = self._get_headers(
-            headers=headers,
-            app_key=kwargs.get("app_key"),
-            app_token=kwargs.get("app_token"),
-        )
+        request_config = self._get_config(config=config)
 
-        with Client() as client:
+        with Client(timeout=request_config.get_timeout()) as client:
             try:
                 response = client.request(
                     method,
-                    url,
-                    content=content,
-                    data=data,
-                    files=files,
-                    json=json,
-                    params=params,
-                    headers=headers,
+                    self._get_url(config=request_config, endpoint=endpoint),
+                    headers=self._get_headers(config=request_config, headers=headers),
                     cookies=cookies,
-                    timeout=timeout,
+                    params=params,
+                    json=json,
+                    data=data,
+                    content=content,
+                    files=files,
                 )
             except (HTTPError, InvalidURL, CookieConflict, StreamError) as exception:
-                raise RequestError() from exception
+                raise RequestError(exception) from exception
+
+        self._raise_from_response(config=request_config, response=response)
 
         return VTEXResponse(
             data=response.json(),
@@ -94,56 +76,36 @@ class BaseAPI:
             headers=dict(response.headers.items()),
         )
 
-    def _get_url(
-        self: "BaseAPI",
-        endpoint: str,
-        account_name: Optional[str] = None,
-        environment: Optional[str] = None,
-    ) -> str:
-        if not (account_name or self._account_name):
-            raise ValueError("Missing account_name")
+    def _get_config(self: "BaseAPI", config: Optional[Config]) -> Config:
+        return config or self._config
 
-        if not (environment or self._environment):
-            raise ValueError("Missing environment")
-
-        return self._BASE_URL.format(
-            endpoint=endpoint,
-            account_name=account_name or self._account_name,
-            environment=environment or self._environment,
+    def _get_url(self: "BaseAPI", config: Config, endpoint: str) -> str:
+        return urljoin(
+            f"https://{config.get_account_name()}.{config.get_environment()}.com.br",
+            endpoint,
         )
 
     def _get_headers(
         self: "BaseAPI",
+        config: Config,
         headers: Optional[HeaderTypes] = None,
-        app_key: Optional[str] = None,
-        app_token: Optional[str] = None,
-        content_type: Optional[str] = None,
-        accept: Optional[str] = None,
     ) -> Headers:
         request_headers = Headers(headers=headers)
 
-        if app_key:
-            request_headers[self._APP_KEY_HEADER] = app_key
-        elif not request_headers.get(self._APP_KEY_HEADER) and self._app_key:
-            request_headers[self._APP_KEY_HEADER] = self._app_key
-        elif not request_headers.get(self._APP_KEY_HEADER):
-            raise ValueError("Missing app_key")
+        request_headers[APP_KEY_HEADER] = config.get_app_key()
+        request_headers[APP_TOKEN_HEADER] = config.get_app_token()
 
-        if app_token:
-            request_headers[self._APP_TOKEN_HEADER] = app_token
-        elif not request_headers.get(self._APP_TOKEN_HEADER) and self._app_token:
-            request_headers[self._APP_TOKEN_HEADER] = self._app_token
-        elif not request_headers.get(self._APP_TOKEN_HEADER):
-            raise ValueError("Missing app_token")
-
-        request_headers["Content-Type"] = (
-            content_type
-            or request_headers.get("Content-Type")
-            or "application/json; charset=utf-8"
-        )
-
-        request_headers["Accept"] = (
-            accept or request_headers.get("Accept") or "application/json"
-        )
+        request_headers["Content-Type"] = "application/json; charset=utf-8"
+        request_headers["Accept"] = "application/json"
 
         return request_headers
+
+    def _raise_from_response(self, config: Config, response: Response) -> None:
+        if config.get_raise_for_status():
+            try:
+                response.raise_for_status()
+            except HTTPStatusError as exception:
+                raise VTEXError(
+                    exception,
+                    status=response.status_code,
+                ) from exception

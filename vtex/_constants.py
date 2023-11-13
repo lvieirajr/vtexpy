@@ -1,0 +1,6 @@
+APP_KEY_HEADER = "X-VTEX-API-AppKey"
+APP_TOKEN_HEADER = "X-VTEX-API-AppToken"  # noqa: S105
+
+DEFAULT_ENVIRONMENT = "vtexcommercestable"
+
+DEFAULT_TIMEOUT = 60
