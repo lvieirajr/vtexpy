@@ -32,20 +32,26 @@ mypy:  ##@Typing Runs mypy static type checker against the codebase
 
 
 # ======================================================================================
-# Publishing
+# Releasing
 # ======================================================================================
+.PHONY: clear
+clear:  ##@Releasing Clears the dist directory
+	@echo "Clearing the dist directory..."
+	@rm -rf dist/
+	@echo "Directory cleared."
+
 .PHONY: build
-build:  ##@Publishing Builds the python package into the dist directory
-	@echo "Running poetry build..."
+build:  ##@Releasing Builds the python package into the dist directory
+	@echo "Building the package..."
 	@poetry build
-	@echo "Poetry build done."
+	@echo "Package build."
 
 
 .PHONY: publish
-publish:  ##@Publishing Publishes the built package from the dist directory
-	@echo "Running poetry publish..."
+publish:  ##@Releasing Publishes the built package from the dist directory
+	@echo "Publishing the package..."
 	@poetry publish
-	@echo "Poetry publish done."
+	@echo "Package published."
 
 
 # ======================================================================================
