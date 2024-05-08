@@ -1,14 +1,26 @@
 from dataclasses import asdict, dataclass
 from typing import Any, Optional, Type
 
+from httpx import Response
+
 from ._types import JsonType, ResponseItemsType
 
 
 @dataclass(frozen=True)
 class VTEXResponse:
+    response: Response
     data: Any
     status: int
     headers: JsonType
+
+    @classmethod
+    def from_response(cls: Type["VTEXResponse"], response: Response) -> "VTEXResponse":
+        return cls(
+            response=response,
+            data=response.json(),
+            status=response.status_code,
+            headers=dict(response.headers.items()),
+        )
 
 
 @dataclass(frozen=True)

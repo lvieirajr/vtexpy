@@ -70,11 +70,7 @@ class BaseAPI:
 
         self._raise_from_response(config=request_config, response=response)
 
-        return VTEXResponse(
-            data=response.json(),
-            status=response.status_code,
-            headers=dict(response.headers.items()),
-        )
+        return VTEXResponse.from_response(response=response)
 
     def _get_config(self: "BaseAPI", config: Optional[Config]) -> Config:
         return config or self._config
