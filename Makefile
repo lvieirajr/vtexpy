@@ -4,21 +4,21 @@
 .PHONY: ruff-checker
 ruff-checker:  ##@Linting Runs ruff checker against the codebase
 	@echo "Running ruff checker..."
-	@ruff check ./ --fix --no-cache --respect-gitignore
+	@ruff check ./ --fix
 	@echo "Ruff checker done."
 
 
 .PHONY: ruff-formatter
 ruff-formatter:  ##@Linting Runs ruff formatter against the codebase
 	@echo "Running ruff formatter..."
-	@ruff format ./ --no-cache --respect-gitignore
+	@ruff format ./
 	@echo "Ruff formatter done."
 
 
 .PHONY: ruff
 ruff:  ##@Linting Runs all ruff linters against the codebase
-	@$(MAKE) ruff-checker
 	@$(MAKE) ruff-formatter
+	@$(MAKE) ruff-checker
 
 
 # ======================================================================================

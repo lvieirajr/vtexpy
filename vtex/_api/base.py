@@ -1,5 +1,5 @@
-from logging import getLogger
-from typing import Any, Optional
+from logging import INFO, getLogger
+from typing import Any, Union
 from urllib.parse import urljoin
 
 from httpx import (
@@ -11,6 +11,13 @@ from httpx import (
     InvalidURL,
     Response,
     StreamError,
+)
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
 )
 
 from .._config import Config
@@ -26,6 +33,7 @@ from .._types import (
     RequestData,
     RequestFiles,
 )
+from .._utils import string_to_snake_case
 
 
 class BaseAPI:
@@ -33,58 +41,81 @@ class BaseAPI:
     Base client for VTEX API.
     """
 
-    def __init__(self: "BaseAPI", config: Optional[Config] = None) -> None:
+    def __init__(self, config: Union[Config, None] = None) -> None:
         self._config = config or Config()
-        self._logger = getLogger(type(self).__name__)
+        self._logger = getLogger(f"vtex.{string_to_snake_case(type(self).__name__)}")
 
     def _request(
-        self: "BaseAPI",
+        self,
         method: HttpMethodTypes,
+        environment: str,
         endpoint: str,
-        headers: Optional[HeaderTypes] = None,
-        cookies: Optional[CookieTypes] = None,
-        params: Optional[QueryParamTypes] = None,
-        json: Optional[Any] = None,
-        data: Optional[RequestData] = None,
-        content: Optional[RequestContent] = None,
-        files: Optional[RequestFiles] = None,
-        config: Optional[Config] = None,
+        headers: Union[HeaderTypes, None] = None,
+        cookies: Union[CookieTypes, None] = None,
+        params: Union[QueryParamTypes, None] = None,
+        json: Union[Any, None] = None,
+        data: Union[RequestData, None] = None,
+        content: Union[RequestContent, None] = None,
+        files: Union[RequestFiles, None] = None,
+        config: Union[Config, None] = None,
     ) -> VTEXResponse:
         request_config = self._get_config(config=config)
+        url = self._get_url(
+            config=request_config,
+            environment=environment,
+            endpoint=endpoint,
+        )
+        headers = self._get_headers(config=request_config, headers=headers)
+
+        @retry(
+            stop=stop_after_attempt(max_attempt_number=request_config.get_retries()),
+            wait=wait_exponential(multiplier=1, max=64, exp_base=2, min=1),
+            retry=retry_if_exception_type(
+                exception_types=(HTTPError, InvalidURL, CookieConflict, StreamError),
+            ),
+            before_sleep=before_sleep_log(
+                logger=self._logger,
+                log_level=INFO,
+                exc_info=True,
+            ),
+            reraise=True,
+        )
+        def _send_request() -> Response:
+            return client.request(
+                method,
+                url,
+                headers=headers,
+                cookies=cookies,
+                params=params,
+                json=json,
+                data=data,
+                content=content,
+                files=files,
+            )
 
         with Client(timeout=request_config.get_timeout()) as client:
             try:
-                response = client.request(
-                    method,
-                    self._get_url(config=request_config, endpoint=endpoint),
-                    headers=self._get_headers(config=request_config, headers=headers),
-                    cookies=cookies,
-                    params=params,
-                    json=json,
-                    data=data,
-                    content=content,
-                    files=files,
-                )
+                response = _send_request()
             except (HTTPError, InvalidURL, CookieConflict, StreamError) as exception:
-                raise RequestError(exception) from exception
+                raise RequestError(exception) from None
 
         self._raise_from_response(config=request_config, response=response)
 
         return VTEXResponse.from_response(response=response)
 
-    def _get_config(self: "BaseAPI", config: Optional[Config]) -> Config:
+    def _get_config(self, config: Union[Config, None]) -> Config:
         return config or self._config
 
-    def _get_url(self: "BaseAPI", config: Config, endpoint: str) -> str:
+    def _get_url(self, config: Config, environment: str, endpoint: str) -> str:
         return urljoin(
-            f"https://{config.get_account_name()}.{config.get_environment()}.com.br",
+            f"https://{config.get_account_name()}.{environment}.com.br",
             endpoint,
         )
 
     def _get_headers(
-        self: "BaseAPI",
+        self,
         config: Config,
-        headers: Optional[HeaderTypes] = None,
+        headers: Union[HeaderTypes, None] = None,
     ) -> Headers:
         request_headers = Headers(headers=headers)
 

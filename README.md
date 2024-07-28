@@ -13,8 +13,9 @@ This is an unofficial Python SDK designed to facilitate integration with the VTE
 
 #### Requirements
 
-- Python >= 3.8
-- httpx >= 0.25
+- Python >= 3.9
+- httpx >= 0.26
+- tenacity >= 8.3
 
 #### Installation
 

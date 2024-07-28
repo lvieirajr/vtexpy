@@ -1,6 +1,11 @@
 from typing import Any
 
-from .._constants import DEFAULT_ENVIRONMENT
+from .._constants import (
+    LIST_CARRIERS_MAX_PAGE_SIZE,
+    LIST_CARRIERS_START_PAGE,
+    LIST_DOCKS_MAX_PAGE_SIZE,
+    LIST_DOCKS_START_PAGE,
+)
 from .._response import PaginatedResponse, VTEXResponse
 from .base import BaseAPI
 
@@ -11,64 +16,56 @@ class LogisticsAPI(BaseAPI):
     https://developers.vtex.com/docs/api-reference/logistics-api
     """
 
-    ENVIRONMENT = DEFAULT_ENVIRONMENT
+    ENVIRONMENT = "vtexcommercestable"
 
     def list_carriers(
-        self: "LogisticsAPI",
-        page: int = 1,
-        page_size: int = 1000,
+        self,
+        page: int = LIST_CARRIERS_START_PAGE,
+        page_size: int = LIST_CARRIERS_MAX_PAGE_SIZE,
         **kwargs: Any,
     ) -> PaginatedResponse:
         return PaginatedResponse.from_vtex_response(
             vtex_response=self._request(
                 method="GET",
+                environment=self.ENVIRONMENT,
                 endpoint="api/logistics/pvt/configuration/carriers",
                 params={"page": page, "perPage": page_size},
-                config=self._config.with_overrides(
-                    **kwargs,
-                    environment=self.ENVIRONMENT,
-                ),
+                config=self._config.with_overrides(**kwargs),
             ),
         )
 
     def get_carrier(
-        self: "LogisticsAPI",
+        self,
         carrier_id: str,
         **kwargs: Any,
     ) -> VTEXResponse:
         return self._request(
             method="GET",
+            environment=self.ENVIRONMENT,
             endpoint=f"api/logistics/pvt/configuration/carriers/{carrier_id}",
-            config=self._config.with_overrides(
-                **kwargs,
-                environment=self.ENVIRONMENT,
-            ),
+            config=self._config.with_overrides(**kwargs),
         )
 
     def list_docks(
-        self: "LogisticsAPI",
-        page: int = 1,
-        page_size: int = 1000,
+        self,
+        page: int = LIST_DOCKS_START_PAGE,
+        page_size: int = LIST_DOCKS_MAX_PAGE_SIZE,
         **kwargs: Any,
     ) -> PaginatedResponse:
         return PaginatedResponse.from_vtex_response(
             vtex_response=self._request(
                 method="GET",
+                environment=self.ENVIRONMENT,
                 endpoint="api/logistics/pvt/configuration/docks",
                 params={"page": page, "perPage": page_size},
-                config=self._config.with_overrides(
-                    **kwargs,
-                    environment=self.ENVIRONMENT,
-                ),
+                config=self._config.with_overrides(**kwargs),
             ),
         )
 
-    def get_dock(self: "LogisticsAPI", dock_id: str, **kwargs: Any) -> VTEXResponse:
+    def get_dock(self, dock_id: str, **kwargs: Any) -> VTEXResponse:
         return self._request(
             method="GET",
+            environment=self.ENVIRONMENT,
             endpoint=f"api/logistics/pvt/configuration/docks/{dock_id}",
-            config=self._config.with_overrides(
-                **kwargs,
-                environment=self.ENVIRONMENT,
-            ),
+            config=self._config.with_overrides(**kwargs),
         )

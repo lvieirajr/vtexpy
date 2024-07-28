@@ -1,6 +1,5 @@
 from typing import Any, Optional
 
-from .._config import Config
 from .._response import VTEXResponse
 from .._types import (
     CookieTypes,
@@ -21,8 +20,9 @@ class CustomAPI(BaseAPI):
     """
 
     def request(
-        self: "BaseAPI",
+        self,
         method: HttpMethodTypes,
+        environment: str,
         endpoint: str,
         headers: Optional[HeaderTypes] = None,
         cookies: Optional[CookieTypes] = None,
@@ -31,10 +31,11 @@ class CustomAPI(BaseAPI):
         data: Optional[RequestData] = None,
         content: Optional[RequestContent] = None,
         files: Optional[RequestFiles] = None,
-        config: Optional[Config] = None,
+        **kwargs: Any,
     ) -> VTEXResponse:
         return self._request(
             method=method,
+            environment=environment,
             endpoint=endpoint,
             headers=headers,
             cookies=cookies,
@@ -43,5 +44,5 @@ class CustomAPI(BaseAPI):
             data=data,
             content=content,
             files=files,
-            config=config,
+            config=self._config.with_overrides(**kwargs),
         )

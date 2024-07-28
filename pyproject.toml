@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "vtexpy"
-description = "Unofficial Python SDK for VTEX API."
+description = "Unofficial Python SDK for VTEX API"
 readme = "README.md"
 license = "MIT"
 authors = [
@@ -14,20 +14,19 @@ repository = "https://github.com/lvieirajr/vtex-python"
 documentation = "https://github.com/lvieirajr/vtex-python"
 keywords = ["vtex", "sdk", "client", "api"]
 classifiers = [
-    "Typing :: Typed",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
     "Operating System :: OS Independent",
     "Operating System :: POSIX",
-    "Operating System :: MacOS",
     "Operating System :: POSIX :: Linux",
-    "Operating System :: Microsoft :: Windows",
     "Topic :: Software Development :: Libraries :: Python Modules",
-    "Development Status :: 3 - Alpha"
+    "Typing :: Typed",
 ]
 packages = [
     {include = "vtex"},
@@ -39,32 +38,58 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
-python = "^3.8"
-httpx = {version = "^0.26", extras = ["http2"]}
+python = ">=3.9,<3.13"
+httpx = {version = ">=0.26,<1.0"}
+tenacity = {version = ">=8.3,<9.0"}
 
 [tool.poetry.group.dev.dependencies]
-ipdb = {version = "^0.13"}
-mock = {version = "^5.1"}
-mypy = {version = "^1.7"}
-pytest = {version = "^7.4"}
-pytest-cov = {version = "^4.1"}
-ruff = {version = "^0.1"}
-safety = {version = "^2.3"}
+ipdb = {version = "^0"}
+mock = {version = "^5"}
+mypy = {version = "^1"}
+pytest = {version = "^8"}
+pytest-mock = {version = "^3"}
+ruff = {version = "^0"}
+safety = {version = "^3"}
 
 
+# ======
+# PyTest
+# ======
 [tool.pytest.ini_options]
 addopts = "-s -vv"
+markers = [
+    "unit: unit tests",
+    "integration: integration tests",
+    "e2e: end-to-end tests",
+]
 mock_use_standalone_module = true
 
 
+# ====
+# MyPy
+# ====
 [tool.mypy]
+exclude = [".*tests/*"]
 ignore_missing_imports = true
 namespace_packages = true
+no_implicit_reexport = false
 plugins = []
 strict = true
 
 
+# ====
+# Ruff
+# ====
 [tool.ruff]
-target-version = "py311"
+target-version = "py312"
+
+[tool.ruff.format]
+preview = true
+
+[tool.ruff.lint]
 ignore = ["COM812", "ISC001"]
 select = ["B", "C4", "C90", "COM", "E", "EXE", "F", "I", "ISC", "N", "S", "T10", "T20", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401"]
+"**/tests/*" = ["S101"]
