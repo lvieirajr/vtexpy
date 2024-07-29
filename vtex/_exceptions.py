@@ -1,4 +1,6 @@
-from typing import Any, Optional
+from typing import Any, Union
+
+from httpx import Response
 
 
 class RequestError(Exception):
@@ -6,8 +8,13 @@ class RequestError(Exception):
 
 
 class VTEXError(Exception):
-    status = None
+    response: Union[Response, None] = None
 
-    def __init__(self, *args: Any, status: Optional[int] = None) -> None:
-        super().__init__(*args)
-        self.status = status
+    def __init__(
+        self,
+        *args: Any,
+        response: Union[Response, None] = None,
+        **kwargs: Any,
+    ) -> None:
+        self.response = response
+        super().__init__(*args, **kwargs)

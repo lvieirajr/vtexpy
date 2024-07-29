@@ -7,7 +7,6 @@ from httpx import (
     CookieConflict,
     Headers,
     HTTPError,
-    HTTPStatusError,
     InvalidURL,
     Response,
     StreamError,
@@ -69,7 +68,7 @@ class BaseAPI:
 
         @retry(
             stop=stop_after_attempt(
-                max_attempt_number=max(request_config.get_retries(), 0) + 1,
+                max_attempt_number=request_config.get_retries() + 1,
             ),
             wait=wait_exponential(multiplier=1, max=64, exp_base=2, min=1),
             retry=retry_if_exception_type(
@@ -101,7 +100,7 @@ class BaseAPI:
             except (HTTPError, InvalidURL, CookieConflict, StreamError) as exception:
                 raise RequestError(exception) from None
 
-        self._raise_from_response(config=request_config, response=response)
+        self._raise_from_response(response=response, config=request_config)
 
         return VTEXResponse.from_response(response=response)
 
@@ -129,12 +128,6 @@ class BaseAPI:
 
         return request_headers
 
-    def _raise_from_response(self, config: Config, response: Response) -> None:
+    def _raise_from_response(self, response: Response, config: Config) -> None:
         if config.get_raise_for_status():
-            try:
-                response.raise_for_status()
-            except HTTPStatusError as exception:
-                raise VTEXError(
-                    exception,
-                    status=response.status_code,
-                ) from exception
+            raise VTEXError(response=response)

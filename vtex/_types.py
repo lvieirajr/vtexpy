@@ -3,12 +3,9 @@ from typing import (
     IO,
     Any,
     AsyncIterable,
-    Dict,
     Iterable,
-    List,
     Literal,
     Mapping,
-    Optional,
     Sequence,
     Tuple,
     Union,
@@ -23,13 +20,10 @@ class UndefinedType:
 
 HttpMethodTypes = Literal["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
 
-PrimitiveTypes = Union[str, int, float, bool, None]
+PrimitiveTypes = Union[None, bool, int, float, str]
 PrimitiveSequenceType = Sequence[PrimitiveTypes]
 
-JsonType = Dict[str, Union[PrimitiveTypes, PrimitiveSequenceType]]
-JsonSequenceType = Sequence[JsonType]
-
-ResponseItemsType = Union[PrimitiveSequenceType, JsonSequenceType]
+JSONType = Union[PrimitiveTypes, Sequence["JSONType"], Mapping[str, "JSONType"]]
 
 RequestContent = Union[str, bytes, Iterable[bytes], AsyncIterable[bytes]]
 
@@ -38,16 +32,16 @@ RequestData = Mapping[str, Any]
 FileContent = Union[IO[bytes], bytes, str]
 FileTypes = Union[
     FileContent,
-    Tuple[Optional[str], FileContent],
-    Tuple[Optional[str], FileContent, Optional[str]],
-    Tuple[Optional[str], FileContent, Optional[str], Mapping[str, str]],
+    Tuple[Union[str, None], FileContent],
+    Tuple[Union[str, None], FileContent, Union[str, None]],
+    Tuple[Union[str, None], FileContent, Union[str, None], Mapping[str, str]],
 ]
 RequestFiles = Union[Mapping[str, FileTypes], Sequence[Tuple[str, FileTypes]]]
 
 QueryParamTypes = Union[
     QueryParams,
     Mapping[str, Union[PrimitiveTypes, PrimitiveSequenceType]],
-    List[Tuple[str, PrimitiveTypes]],
+    Sequence[Tuple[str, PrimitiveTypes]],
     Tuple[Tuple[str, PrimitiveTypes], ...],
     str,
     bytes,
@@ -61,4 +55,4 @@ HeaderTypes = Union[
     Sequence[Tuple[bytes, bytes]],
 ]
 
-CookieTypes = Union[Cookies, CookieJar, Dict[str, str], List[Tuple[str, str]]]
+CookieTypes = Union[Cookies, CookieJar, Mapping[str, str], Sequence[Tuple[str, str]]]

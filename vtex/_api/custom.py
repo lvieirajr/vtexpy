@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Union
 
 from .._response import VTEXResponse
 from .._types import (
@@ -24,13 +24,13 @@ class CustomAPI(BaseAPI):
         method: HttpMethodTypes,
         environment: str,
         endpoint: str,
-        headers: Optional[HeaderTypes] = None,
-        cookies: Optional[CookieTypes] = None,
-        params: Optional[QueryParamTypes] = None,
-        json: Optional[Any] = None,
-        data: Optional[RequestData] = None,
-        content: Optional[RequestContent] = None,
-        files: Optional[RequestFiles] = None,
+        headers: Union[HeaderTypes, None] = None,
+        cookies: Union[CookieTypes, None] = None,
+        params: Union[QueryParamTypes, None] = None,
+        json: Union[Any, None] = None,
+        data: Union[RequestData, None] = None,
+        content: Union[RequestContent, None] = None,
+        files: Union[RequestFiles, None] = None,
         **kwargs: Any,
     ) -> VTEXResponse:
         return self._request(

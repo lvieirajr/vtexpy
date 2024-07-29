@@ -1,10 +1,9 @@
-from distutils.util import strtobool
 from re import compile
 from typing import Any
 
-from box import Box, BoxList
+from distutils.util import strtobool
 
-from ._types import UndefinedType
+from ._types import JSONType, UndefinedType
 
 TO_SNAKE_CASE_STEP_1_PATTERN = compile(r"(.)([A-Z][a-z]+)")
 TO_SNAKE_CASE_STEP_2_PATTERN = compile(r"([a-z0-9])([A-Z])")
@@ -29,7 +28,7 @@ def string_to_snake_case(string: str) -> str:
     ).lower()
 
 
-def to_snake_case(obj: Any) -> Any:
+def to_snake_case(obj: JSONType) -> JSONType:
     if isinstance(obj, dict):
         return {
             (string_to_snake_case(key) if isinstance(key, str) else key): (
@@ -42,28 +41,3 @@ def to_snake_case(obj: Any) -> Any:
         return type(obj)([to_snake_case(element) for element in obj])
 
     return obj
-
-
-def to_box(obj: Any, convert_to_snake_case: bool = True) -> Any:
-    if convert_to_snake_case:
-        obj = to_snake_case(obj)
-
-    if isinstance(obj, dict):
-        return Box(obj)
-
-    if isinstance(obj, (list, set, tuple)):
-        return type(obj)(BoxList(obj))
-
-    return obj
-
-
-def box_repr(self: Box) -> str:
-    return str(self.to_dict())
-
-
-def box_list_repr(self: BoxList) -> str:
-    return str(self.to_list())
-
-
-Box.__repr__ = box_repr
-BoxList.__repr__ = box_list_repr
