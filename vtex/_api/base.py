@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from json import JSONDecodeError
 from logging import INFO
 from random import randint
@@ -9,7 +10,6 @@ from httpx import (
     CookieConflict,
     Headers,
     HTTPError,
-    HTTPStatusError,
     InvalidURL,
     Response,
     StreamError,
@@ -132,41 +132,30 @@ class BaseAPI:
         return request_headers
 
     def _raise_from_response(self, response: Response, config: Config) -> None:
-        if config.get_raise_for_status():
+        if response.is_error and config.get_raise_for_status():
             try:
-                response.raise_for_status()
-            except HTTPStatusError as exception:
-                try:
-                    data = response.json(strict=False)
-                except JSONDecodeError:
-                    data = response.text
+                data = response.json(strict=False)
+            except JSONDecodeError:
+                data = response.text or HTTPStatus(response.status_code).phrase
 
-                response_details = {
-                    "exception": exception,
-                    "method": response.request.method,
-                    "url": str(response.request.url),
-                    "headers": {
-                        "request": {
-                            **dict(response.request.headers),
-                            APP_KEY_HEADER: "*" * randint(16, 32),
-                            APP_TOKEN_HEADER: "*" * randint(16, 32),
-                        },
-                        "response": dict(response.headers),
+            details = {
+                "method": response.request.method,
+                "url": str(response.request.url),
+                "headers": {
+                    "request": {
+                        **dict(response.request.headers),
+                        APP_KEY_HEADER: "*" * randint(16, 32),
+                        APP_TOKEN_HEADER: "*" * randint(16, 32),
                     },
-                    "status": response.status_code,
-                    "data": data,
-                }
+                    "response": dict(response.headers),
+                },
+                "status": response.status_code,
+                "data": data,
+            }
 
-                if response.is_server_error:
-                    log = self._logger.error
-                else:
-                    log = self._logger.warning
+            if response.is_server_error:
+                self._logger.error(data, extra=details)
+            else:
+                self._logger.warning(data, extra=details)
 
-                log(
-                    str(exception),
-                    extra=response_details,
-                    exc_info=True,
-                    stack_info=True,
-                )
-
-                raise VTEXError(**response_details) from None
+            raise VTEXError(data, **details) from None
