@@ -7,6 +7,7 @@ from httpx import (
     CookieConflict,
     Headers,
     HTTPError,
+    HTTPStatusError,
     InvalidURL,
     Response,
     StreamError,
@@ -130,4 +131,13 @@ class BaseAPI:
 
     def _raise_from_response(self, response: Response, config: Config) -> None:
         if config.get_raise_for_status():
-            raise VTEXError(response=response)
+            try:
+                response.raise_for_status()
+            except HTTPStatusError as exception:
+                self._logger.error(
+                    exception,
+                    extra={"response": response.__dict__},
+                    exc_info=True,
+                    stack_info=True,
+                )
+                raise VTEXError(exception, response=response) from None
