@@ -68,7 +68,9 @@ class BaseAPI:
         headers = self._get_headers(config=request_config, headers=headers)
 
         @retry(
-            stop=stop_after_attempt(max_attempt_number=request_config.get_retries()),
+            stop=stop_after_attempt(
+                max_attempt_number=max(request_config.get_retries(), 0) + 1,
+            ),
             wait=wait_exponential(multiplier=1, max=64, exp_base=2, min=1),
             retry=retry_if_exception_type(
                 exception_types=(HTTPError, InvalidURL, CookieConflict, StreamError),

@@ -28,7 +28,7 @@ class LogisticsAPI(BaseAPI):
             vtex_response=self._request(
                 method="GET",
                 environment=self.ENVIRONMENT,
-                endpoint="api/logistics/pvt/configuration/carriers",
+                endpoint="/api/logistics/pvt/configuration/carriers",
                 params={"page": page, "perPage": page_size},
                 config=self._config.with_overrides(**kwargs),
             ),
@@ -42,7 +42,7 @@ class LogisticsAPI(BaseAPI):
         return self._request(
             method="GET",
             environment=self.ENVIRONMENT,
-            endpoint=f"api/logistics/pvt/configuration/carriers/{carrier_id}",
+            endpoint=f"/api/logistics/pvt/configuration/carriers/{carrier_id}",
             config=self._config.with_overrides(**kwargs),
         )
 
@@ -56,7 +56,7 @@ class LogisticsAPI(BaseAPI):
             vtex_response=self._request(
                 method="GET",
                 environment=self.ENVIRONMENT,
-                endpoint="api/logistics/pvt/configuration/docks",
+                endpoint="/api/logistics/pvt/configuration/docks",
                 params={"page": page, "perPage": page_size},
                 config=self._config.with_overrides(**kwargs),
             ),
@@ -66,6 +66,6 @@ class LogisticsAPI(BaseAPI):
         return self._request(
             method="GET",
             environment=self.ENVIRONMENT,
-            endpoint=f"api/logistics/pvt/configuration/docks/{dock_id}",
+            endpoint=f"/api/logistics/pvt/configuration/docks/{dock_id}",
             config=self._config.with_overrides(**kwargs),
         )

@@ -20,6 +20,6 @@ class TransactionsAPI(BaseAPI):
         return self._request(
             method="GET",
             environment=self.ENVIRONMENT,
-            endpoint=f"api/pvt/transactions/{transaction_id}/interactions/",
-            config=self._config.with_overrides(**kwargs, retries=10),
+            endpoint=f"/api/pvt/transactions/{transaction_id}/interactions/",
+            config=self._config.with_overrides(retries=10, **kwargs),
         )

@@ -16,6 +16,11 @@ from typing import (
 
 from httpx import Cookies, Headers, QueryParams
 
+
+class UndefinedType:
+    pass
+
+
 HttpMethodTypes = Literal["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
 
 PrimitiveTypes = Union[str, int, float, bool, None]

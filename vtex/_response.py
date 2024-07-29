@@ -1,16 +1,17 @@
 from dataclasses import asdict, dataclass
-from typing import Any, Optional
+from typing import Union
 
+from box import Box, BoxList
 from httpx import Response
 
-from ._types import JsonType, ResponseItemsType
-from ._utils import to_snake_case
+from ._types import JsonType, PrimitiveTypes
+from ._utils import to_box
 
 
 @dataclass(frozen=True)
 class VTEXResponse:
     response: Response
-    data: Any
+    data: Union[Box, BoxList, PrimitiveTypes]
     status: int
     headers: JsonType
 
@@ -18,8 +19,8 @@ class VTEXResponse:
     def from_response(cls, response: Response) -> "VTEXResponse":
         return cls(
             response=response,
-            data=to_snake_case(response.json()),
-            status=response.status_code,
+            data=to_box(response.json()),
+            status=int(response.status_code),
             headers=dict(response.headers.items()),
         )
 
@@ -30,22 +31,22 @@ class PaginatedResponse(VTEXResponse):
     pages: int
     page_size: int
     page: int
-    previous_page: Optional[int]
-    next_page: Optional[int]
-    items: ResponseItemsType
+    previous_page: Union[int, None]
+    next_page: Union[int, None]
+    items: BoxList
 
     @classmethod
     def from_vtex_response(cls, vtex_response: VTEXResponse) -> "PaginatedResponse":
-        pagination = vtex_response.data["paging"]
-        page = pagination["page"]
+        pagination = vtex_response.data.paging
+        page = pagination.page
 
         return cls(
             **asdict(vtex_response),
-            total=pagination["total"],
-            pages=pagination["pages"],
-            page_size=pagination["per_page"],
+            total=pagination.total,
+            pages=pagination.pages,
+            page_size=pagination.per_page,
             page=page,
             previous_page=page - 1 if page > 1 else None,
-            next_page=page + 1 if page < pagination["pages"] else None,
+            next_page=page + 1 if page < pagination.pages else None,
             items=vtex_response.data["items"],
         )
