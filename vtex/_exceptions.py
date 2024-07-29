@@ -13,15 +13,17 @@ class VTEXError(Exception):
         *args: Any,
         method: Union[str, None] = None,
         url: Union[str, None] = None,
-        headers: Union[JSONType, None] = None,
+        request_headers: Union[JSONType, None] = None,
         status: Union[int, None] = None,
         data: Union[JSONType, None] = None,
+        response_headers: Union[JSONType, None] = None,
         **kwargs: Any,
     ) -> None:
         self.method = method
         self.url = url
-        self.headers = headers
+        self.request_headers = request_headers
         self.status = status
         self.data = data
+        self.response_headers = response_headers
 
         super().__init__(str(data or "VTEXError"), *args, **kwargs)

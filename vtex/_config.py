@@ -4,9 +4,7 @@ from typing import Union
 
 from ._constants import DEFAULT_RAISE_FOR_STATUS, DEFAULT_RETRIES, DEFAULT_TIMEOUT
 from ._types import UndefinedType
-from ._utils import is_nullish_str, is_undefined, str_to_bool
-
-UNDEFINED = UndefinedType()
+from ._utils import UNDEFINED, is_nullish_str, is_undefined, str_to_bool
 
 
 @dataclass

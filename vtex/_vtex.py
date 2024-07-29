@@ -11,8 +11,7 @@ from ._api import (
 )
 from ._config import Config
 from ._types import UndefinedType
-
-UNDEFINED = UndefinedType()
+from ._utils import UNDEFINED
 
 
 class VTEX:

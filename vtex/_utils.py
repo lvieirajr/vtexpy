@@ -1,5 +1,5 @@
 from re import compile
-from typing import Any
+from typing import Any, Dict
 
 from distutils.util import strtobool
 
@@ -8,6 +8,8 @@ from ._types import JSONType, UndefinedType
 TO_SNAKE_CASE_STEP_1_PATTERN = compile(r"(.)([A-Z][a-z]+)")
 TO_SNAKE_CASE_STEP_2_PATTERN = compile(r"([a-z0-9])([A-Z])")
 
+UNDEFINED = UndefinedType()
+
 
 def is_nullish_str(value: str) -> bool:
     return not value or value.lower() in {"null", "none", "nil"}
@@ -15,6 +17,10 @@ def is_nullish_str(value: str) -> bool:
 
 def is_undefined(value: Any) -> bool:
     return isinstance(value, UndefinedType)
+
+
+def exclude_undefined_values(obj: Dict[Any, Any]) -> Dict[Any, Any]:
+    return {key: value for key, value in obj.items() if not is_undefined(value)}
 
 
 def str_to_bool(value: str) -> bool:

@@ -1,7 +1,6 @@
 from http import HTTPStatus
 from json import JSONDecodeError
 from logging import INFO
-from random import randint
 from typing import Any, Union
 from urllib.parse import urljoin
 
@@ -138,19 +137,18 @@ class BaseAPI:
             except JSONDecodeError:
                 data = response.text or HTTPStatus(response.status_code).phrase
 
+            request_headers = dict(response.request.headers)
+            for key in list(request_headers.keys()):
+                if key.lower() in {APP_KEY_HEADER.lower(), APP_TOKEN_HEADER.lower()}:
+                    request_headers[key] = "*" * 32
+
             details = {
-                "method": response.request.method,
+                "method": str(response.request.method).upper(),
                 "url": str(response.request.url),
-                "headers": {
-                    "request": {
-                        **dict(response.request.headers),
-                        APP_KEY_HEADER: "*" * randint(16, 32),
-                        APP_TOKEN_HEADER: "*" * randint(16, 32),
-                    },
-                    "response": dict(response.headers),
-                },
+                "request_headers": request_headers,
                 "status": response.status_code,
                 "data": data,
+                "response_headers": dict(response.headers),
             }
 
             if response.is_server_error:
