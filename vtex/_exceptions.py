@@ -1,6 +1,6 @@
 from typing import Any, Union
 
-from httpx import Response
+from ._types import JSONType
 
 
 class RequestError(Exception):
@@ -8,13 +8,22 @@ class RequestError(Exception):
 
 
 class VTEXError(Exception):
-    response: Union[Response, None] = None
-
     def __init__(
         self,
         *args: Any,
-        response: Union[Response, None] = None,
+        exception: Union[Exception, None] = None,
+        method: Union[str, None] = None,
+        url: Union[str, None] = None,
+        headers: Union[JSONType, None] = None,
+        status: Union[int, None] = None,
+        data: Union[JSONType, None] = None,
         **kwargs: Any,
     ) -> None:
-        self.response = response
-        super().__init__(*args, **kwargs)
+        self.exception = exception
+        self.method = method
+        self.url = url
+        self.headers = headers
+        self.status = status
+        self.data = data
+
+        super().__init__(str(exception or data or "VTEXError"), *args, **kwargs)

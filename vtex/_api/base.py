@@ -1,4 +1,6 @@
-from logging import INFO, getLogger
+from json import JSONDecodeError
+from logging import INFO
+from random import randint
 from typing import Any, Union
 from urllib.parse import urljoin
 
@@ -23,6 +25,7 @@ from tenacity import (
 from .._config import Config
 from .._constants import APP_KEY_HEADER, APP_TOKEN_HEADER
 from .._exceptions import RequestError, VTEXError
+from .._logging import get_logger
 from .._response import VTEXResponse
 from .._types import (
     CookieTypes,
@@ -33,7 +36,6 @@ from .._types import (
     RequestData,
     RequestFiles,
 )
-from .._utils import string_to_snake_case
 
 
 class BaseAPI:
@@ -43,7 +45,7 @@ class BaseAPI:
 
     def __init__(self, config: Union[Config, None] = None) -> None:
         self._config = config or Config()
-        self._logger = getLogger(f"vtex.{string_to_snake_case(type(self).__name__)}")
+        self._logger = get_logger(type(self).__name__)
 
     def _request(
         self,
@@ -134,10 +136,37 @@ class BaseAPI:
             try:
                 response.raise_for_status()
             except HTTPStatusError as exception:
-                self._logger.error(
-                    exception,
-                    extra={"response": response.__dict__},
+                try:
+                    data = response.json(strict=False)
+                except JSONDecodeError:
+                    data = response.text
+
+                response_details = {
+                    "exception": exception,
+                    "method": response.request.method,
+                    "url": str(response.request.url),
+                    "headers": {
+                        "request": {
+                            **dict(response.request.headers),
+                            APP_KEY_HEADER: "*" * randint(16, 32),
+                            APP_TOKEN_HEADER: "*" * randint(16, 32),
+                        },
+                        "response": dict(response.headers),
+                    },
+                    "status": response.status_code,
+                    "data": data,
+                }
+
+                if response.is_server_error:
+                    log = self._logger.error
+                else:
+                    log = self._logger.warning
+
+                log(
+                    str(exception),
+                    extra=response_details,
                     exc_info=True,
                     stack_info=True,
                 )
-                raise VTEXError(exception, response=response) from None
+
+                raise VTEXError(**response_details) from None

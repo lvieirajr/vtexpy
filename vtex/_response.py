@@ -1,10 +1,11 @@
 from dataclasses import asdict, dataclass
+from json import JSONDecodeError
 from typing import Dict, Sequence, Union
 
 from httpx import Response
 
 from ._types import JSONType
-from ._utils import to_snake_case
+from ._utils import to_snake_case_deep
 
 
 @dataclass(frozen=True)
@@ -16,9 +17,14 @@ class VTEXResponse:
 
     @classmethod
     def from_response(cls, response: Response) -> "VTEXResponse":
+        try:
+            data = response.json(strict=False)
+        except JSONDecodeError:
+            data = response.text
+
         return cls(
             response=response,
-            data=to_snake_case(response.json()),
+            data=to_snake_case_deep(data),
             status=int(response.status_code),
             headers=dict(response.headers.items()),
         )
