@@ -8,7 +8,7 @@ from ._types import JSONType
 from ._utils import to_snake_case_deep
 
 
-@dataclass(frozen=True)
+@dataclass
 class VTEXRequest:
     request: Request
     method: str
@@ -25,7 +25,7 @@ class VTEXRequest:
         )
 
 
-@dataclass(frozen=True)
+@dataclass
 class VTEXResponse:
     request: VTEXRequest
     response: Response
@@ -49,7 +49,7 @@ class VTEXResponse:
         )
 
 
-@dataclass(frozen=True)
+@dataclass
 class VTEXListResponse(VTEXResponse):
     items: Sequence[JSONType]
 
@@ -59,6 +59,8 @@ class VTEXListResponse(VTEXResponse):
 
         if isinstance(data, list):
             items = data
+        elif isinstance(data, dict) and isinstance(data.get("list"), list):
+            items = data["list"]
         elif isinstance(data, dict) and isinstance(data.get("items"), list):
             items = data["items"]
         else:
@@ -67,7 +69,7 @@ class VTEXListResponse(VTEXResponse):
         return cls(**asdict(vtex_response), items=items)
 
 
-@dataclass(frozen=True)
+@dataclass
 class VTEXPagination:
     total: int
     pages: int
@@ -85,21 +87,22 @@ class VTEXPagination:
         else:
             raise ValueError(f"Not a valid paginated list response: {data}")
 
+        total = pagination.get("total")
+        pages = pagination.get("pages")
+        page_size = pagination.get("per_page")
+        page = pagination.get("page") or pagination.get("current_page")
+
         return cls(
-            total=pagination["total"],
-            pages=pagination["pages"],
-            page_size=pagination["per_page"],
-            page=pagination["page"],
-            previous_page=pagination["page"] - 1 if pagination["page"] > 1 else None,
-            next_page=(
-                pagination["page"] + 1
-                if pagination["page"] < pagination["pages"]
-                else None
-            ),
+            total=total,
+            pages=pages,
+            page_size=page_size,
+            page=page,
+            previous_page=page - 1 if page > 1 else None,
+            next_page=page + 1 if page < pages else None,
         )
 
 
-@dataclass(frozen=True)
+@dataclass
 class VTEXPaginatedListResponse(VTEXListResponse, VTEXPagination):
     @classmethod
     def factory(cls, vtex_response: VTEXResponse) -> "VTEXPaginatedListResponse":
@@ -109,7 +112,7 @@ class VTEXPaginatedListResponse(VTEXListResponse, VTEXPagination):
         )
 
 
-@dataclass(frozen=True)
+@dataclass
 class VTEXScroll:
     token: Union[str, None]
 
@@ -118,7 +121,7 @@ class VTEXScroll:
         return cls(token=None)
 
 
-@dataclass(frozen=True)
+@dataclass
 class VTEXScrollListResponse(VTEXListResponse, VTEXScroll):
     @classmethod
     def factory(cls, vtex_response: VTEXResponse) -> "VTEXScrollListResponse":

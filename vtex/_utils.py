@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from re import compile
 from typing import Any, Dict, Mapping
 
@@ -60,3 +61,12 @@ def redact_headers(headers: Mapping[str, str]) -> Dict[str, str]:
             redacted_headers[key] = value
 
     return redacted_headers
+
+
+def now(use_tz: bool = True) -> datetime:
+    return datetime.now(timezone.utc if use_tz else None)
+
+
+def start_of_two_years_ago(use_tz: bool = True) -> datetime:
+    tz = timezone.utc if use_tz else None
+    return datetime(year=datetime.now(tz).year - 2, month=1, day=1, tzinfo=tz)
