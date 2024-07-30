@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from re import compile
 from typing import Any, Dict, Mapping
 
@@ -67,6 +67,12 @@ def now(use_tz: bool = True) -> datetime:
     return datetime.now(timezone.utc if use_tz else None)
 
 
-def start_of_two_years_ago(use_tz: bool = True) -> datetime:
-    tz = timezone.utc if use_tz else None
-    return datetime(year=datetime.now(tz).year - 2, month=1, day=1, tzinfo=tz)
+def three_years_ago(use_tz: bool = True) -> datetime:
+    current_datetime = now(use_tz)
+
+    return datetime(
+        year=current_datetime.year - 3,
+        month=current_datetime.month,
+        day=current_datetime.day,
+        tzinfo=current_datetime.tzinfo,
+    ) - timedelta(days=1)

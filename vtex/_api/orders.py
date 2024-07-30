@@ -1,15 +1,16 @@
 from datetime import datetime
-from typing import Any, Union
+from typing import Any, Sequence, Union
 
 from .._constants import (
+    LIST_FEED_ORDERS_MAX_PAGE_SIZE,
     LIST_ORDERS_MAX_PAGE,
     LIST_ORDERS_MAX_PAGE_SIZE,
     LIST_ORDERS_START_PAGE,
     MIN_PAGE_SIZE,
 )
-from .._dto import VTEXPaginatedListResponse, VTEXResponse
+from .._dto import VTEXListResponse, VTEXPaginatedListResponse, VTEXResponse
 from .._types import UndefinedType
-from .._utils import UNDEFINED, is_undefined, now, start_of_two_years_ago
+from .._utils import UNDEFINED, is_undefined, now, three_years_ago
 from .base import BaseAPI
 
 
@@ -47,7 +48,7 @@ class OrdersAPI(BaseAPI):
 
         if not is_undefined(creation_date_from) or not is_undefined(creation_date_to):
             if not isinstance(creation_date_from, datetime):
-                creation_date_from = start_of_two_years_ago()
+                creation_date_from = three_years_ago()
 
             if not isinstance(creation_date_to, datetime):
                 creation_date_to = now()
@@ -72,11 +73,44 @@ class OrdersAPI(BaseAPI):
 
         return response
 
-
     def get_order(self, order_id: str, **kwargs: Any) -> VTEXResponse:
         return self._request(
             method="GET",
             environment=self.ENVIRONMENT,
             endpoint=f"/api/oms/pvt/orders/{order_id}",
+            config=self._config.with_overrides(**kwargs),
+        )
+
+    def list_feed_orders(
+        self,
+        page_size: int = LIST_FEED_ORDERS_MAX_PAGE_SIZE,
+        **kwargs: Any,
+    ) -> VTEXListResponse:
+        return VTEXListResponse.factory(
+            vtex_response=self._request(
+                method="GET",
+                environment=self.ENVIRONMENT,
+                endpoint=f"/api/orders/feed/",
+                params={
+                    "maxlot": max(
+                        min(page_size, LIST_FEED_ORDERS_MAX_PAGE_SIZE),
+                        MIN_PAGE_SIZE,
+                    ),
+                },
+                config=self._config.with_overrides(**kwargs),
+            )
+        )
+
+    def commit_feed_orders(self, handles: Sequence[str], **kwargs: Any) -> VTEXResponse:
+        if not handles:
+            raise ValueError(
+                "At least one handle must be provided to commit to the feed"
+            )
+
+        return self._request(
+            method="POST",
+            environment=self.ENVIRONMENT,
+            endpoint=f"/api/orders/feed/",
+            json={"handles": handles},
             config=self._config.with_overrides(**kwargs),
         )
