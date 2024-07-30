@@ -106,6 +106,11 @@ class OrdersAPI(BaseAPI):
             raise ValueError(
                 "At least one handle must be provided to commit to the feed"
             )
+        elif len(handles) > LIST_FEED_ORDERS_MAX_PAGE_SIZE:
+            raise ValueError(
+                f"At most {LIST_FEED_ORDERS_MAX_PAGE_SIZE} feed orders can be commited"
+                f"at once"
+            )
 
         return self._request(
             method="POST",
