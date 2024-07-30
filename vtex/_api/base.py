@@ -1,6 +1,6 @@
 from http import HTTPStatus
 from json import JSONDecodeError
-from logging import INFO
+from logging import WARNING
 from typing import Any, Union
 from urllib.parse import urljoin
 
@@ -79,7 +79,7 @@ class BaseAPI:
             ),
             before_sleep=before_sleep_log(
                 logger=self._logger,
-                log_level=INFO,
+                log_level=WARNING,
                 exc_info=True,
             ),
             reraise=True,
