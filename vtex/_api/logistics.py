@@ -5,6 +5,9 @@ from .._constants import (
     LIST_CARRIERS_START_PAGE,
     LIST_DOCKS_MAX_PAGE_SIZE,
     LIST_DOCKS_START_PAGE,
+    LIST_SHIPPING_POLICIES_MAX_PAGE_SIZE,
+    LIST_SHIPPING_POLICIES_START_PAGE,
+    MIN_PAGE_SIZE,
 )
 from .._dto import VTEXPaginatedListResponse, VTEXResponse
 from .base import BaseAPI
@@ -17,6 +20,40 @@ class LogisticsAPI(BaseAPI):
     """
 
     ENVIRONMENT = "vtexcommercestable"
+
+    def list_shipping_policies(
+        self,
+        page: int = LIST_SHIPPING_POLICIES_START_PAGE,
+        page_size: int = LIST_SHIPPING_POLICIES_MAX_PAGE_SIZE,
+        **kwargs: Any,
+    ) -> VTEXPaginatedListResponse:
+        return VTEXPaginatedListResponse.factory(
+            vtex_response=self._request(
+                method="GET",
+                environment=self.ENVIRONMENT,
+                endpoint="/api/logistics/pvt/shipping-policies",
+                params={
+                    "page": max(page, LIST_SHIPPING_POLICIES_START_PAGE),
+                    "perPage": max(
+                        min(page_size, LIST_SHIPPING_POLICIES_MAX_PAGE_SIZE),
+                        MIN_PAGE_SIZE,
+                    ),
+                },
+                config=self._config.with_overrides(**kwargs),
+            ),
+        )
+
+    def get_shipping_policy(
+        self,
+        shipping_policy_id: str,
+        **kwargs: Any,
+    ) -> VTEXResponse:
+        return self._request(
+            method="GET",
+            environment=self.ENVIRONMENT,
+            endpoint=f"/api/logistics/pvt/shipping-policies/{shipping_policy_id}",
+            config=self._config.with_overrides(**kwargs),
+        )
 
     def list_carriers(
         self,
@@ -31,7 +68,10 @@ class LogisticsAPI(BaseAPI):
                 endpoint="/api/logistics/pvt/configuration/carriers",
                 params={
                     "page": max(page, LIST_CARRIERS_START_PAGE),
-                    "perPage": max(min(page_size, LIST_CARRIERS_MAX_PAGE_SIZE), 1),
+                    "perPage": max(
+                        min(page_size, LIST_CARRIERS_MAX_PAGE_SIZE),
+                        MIN_PAGE_SIZE,
+                    ),
                 },
                 config=self._config.with_overrides(**kwargs),
             ),
@@ -62,7 +102,10 @@ class LogisticsAPI(BaseAPI):
                 endpoint="/api/logistics/pvt/configuration/docks",
                 params={
                     "page": max(page, LIST_DOCKS_START_PAGE),
-                    "perPage": max(min(page_size, LIST_DOCKS_MAX_PAGE_SIZE), 1),
+                    "perPage": max(
+                        min(page_size, LIST_DOCKS_MAX_PAGE_SIZE),
+                        MIN_PAGE_SIZE,
+                    ),
                 },
                 config=self._config.with_overrides(**kwargs),
             ),
