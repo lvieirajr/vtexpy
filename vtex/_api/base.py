@@ -23,9 +23,9 @@ from tenacity import (
 
 from .._config import Config
 from .._constants import APP_KEY_HEADER, APP_TOKEN_HEADER
-from .._exceptions import RequestError, VTEXError
+from .._dto import VTEXResponse
+from .._exceptions import VTEXRequestError, VTEXResponseError
 from .._logging import get_logger
-from .._response import VTEXResponse
 from .._types import (
     CookieTypes,
     HeaderTypes,
@@ -35,6 +35,7 @@ from .._types import (
     RequestData,
     RequestFiles,
 )
+from .._utils import redact_headers
 
 
 class BaseAPI:
@@ -84,27 +85,41 @@ class BaseAPI:
             reraise=True,
         )
         def _send_request() -> Response:
-            return client.request(
-                method,
-                url,
-                headers=headers,
-                cookies=cookies,
-                params=params,
-                json=json,
-                data=data,
-                content=content,
-                files=files,
-            )
+            with Client(timeout=request_config.get_timeout()) as client:
+                return client.request(
+                    method,
+                    url,
+                    headers=headers,
+                    cookies=cookies,
+                    params=params,
+                    json=json,
+                    data=data,
+                    content=content,
+                    files=files,
+                )
 
-        with Client(timeout=request_config.get_timeout()) as client:
-            try:
-                response = _send_request()
-            except (HTTPError, InvalidURL, CookieConflict, StreamError) as exception:
-                raise RequestError(exception) from None
+        try:
+            response = _send_request()
+        except (HTTPError, InvalidURL, CookieConflict, StreamError) as exception:
+            headers = redact_headers(dict(headers))
 
-        self._raise_from_response(response=response, config=request_config)
+            details = {
+                "exception": exception,
+                "method": str(method).upper(),
+                "url": str(url),
+                "headers": headers,
+            }
 
-        return VTEXResponse.from_response(response=response)
+            self._logger.error(str(exception), extra=details, exc_info=True)
+
+            raise VTEXRequestError(**details) from None
+        else:
+            response.headers = redact_headers(dict(response.headers))
+            response.request.headers = headers = redact_headers(dict(headers))
+
+            self._raise_from_response(response=response, config=request_config)
+
+            return VTEXResponse.factory(response=response)
 
     def _get_config(self, config: Union[Config, None]) -> Config:
         return config or self._config
@@ -137,18 +152,13 @@ class BaseAPI:
             except JSONDecodeError:
                 data = response.text or HTTPStatus(response.status_code).phrase
 
-            request_headers = dict(response.request.headers)
-            for key in list(request_headers.keys()):
-                if key.lower() in {APP_KEY_HEADER.lower(), APP_TOKEN_HEADER.lower()}:
-                    request_headers[key] = "*" * 32
-
             details = {
                 "method": str(response.request.method).upper(),
                 "url": str(response.request.url),
-                "request_headers": request_headers,
+                "request_headers": response.request.headers,
                 "status": response.status_code,
                 "data": data,
-                "response_headers": dict(response.headers),
+                "response_headers": response.headers,
             }
 
             if response.is_server_error:
@@ -156,4 +166,4 @@ class BaseAPI:
             else:
                 self._logger.warning(data, extra=details)
 
-            raise VTEXError(data, **details) from None
+            raise VTEXResponseError(data, **details) from None

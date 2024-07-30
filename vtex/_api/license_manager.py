@@ -1,6 +1,6 @@
 from typing import Any
 
-from .._response import VTEXResponse
+from .._dto import VTEXResponse
 from .base import BaseAPI
 
 

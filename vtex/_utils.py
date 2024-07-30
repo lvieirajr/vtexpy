@@ -1,8 +1,9 @@
 from re import compile
-from typing import Any, Dict
+from typing import Any, Dict, Mapping
 
 from distutils.util import strtobool
 
+from ._constants import APP_KEY_HEADER, APP_TOKEN_HEADER
 from ._types import JSONType, UndefinedType
 
 TO_SNAKE_CASE_STEP_1_PATTERN = compile(r"(.)([A-Z][a-z]+)")
@@ -47,3 +48,15 @@ def to_snake_case_deep(obj: JSONType) -> JSONType:
         return type(obj)([to_snake_case_deep(element) for element in obj])
 
     return obj
+
+
+def redact_headers(headers: Mapping[str, str]) -> Dict[str, str]:
+    redacted_headers = {}
+
+    for key, value in list(headers.items()):
+        if key.lower() in {APP_KEY_HEADER.lower(), APP_TOKEN_HEADER.lower()}:
+            redacted_headers[key] = "*" * 32
+        else:
+            redacted_headers[key] = value
+
+    return redacted_headers

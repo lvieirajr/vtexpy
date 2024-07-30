@@ -1,6 +1,6 @@
 from typing import Any, Union
 
-from .._response import VTEXResponse
+from .._dto import VTEXResponse
 from .._types import (
     CookieTypes,
     HeaderTypes,

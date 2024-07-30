@@ -1,15 +1,13 @@
 from . import _constants as VTEXConstants  # noqa: N812
-from ._exceptions import RequestError, VTEXError
-from ._response import PaginatedResponse, VTEXResponse
+from ._exceptions import VTEXError, VTEXRequestError, VTEXResponseError
 from ._vtex import VTEX
 
 __all__ = [
-    "PaginatedResponse",
-    "RequestError",
     "VTEX",
     "VTEXConstants",
     "VTEXError",
-    "VTEXResponse",
+    "VTEXRequestError",
+    "VTEXResponseError",
 ]
 
 
