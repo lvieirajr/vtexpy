@@ -24,6 +24,7 @@ class OrdersAPI(BaseAPI):
 
     def list_orders(
         self,
+        query: Union[str, UndefinedType] = UNDEFINED,
         creation_date_from: Union[datetime, UndefinedType] = UNDEFINED,
         creation_date_to: Union[datetime, UndefinedType] = UNDEFINED,
         order_by: str = "creationDate,desc",
@@ -45,6 +46,9 @@ class OrdersAPI(BaseAPI):
                 MIN_PAGE_SIZE,
             ),
         }
+
+        if not is_undefined(query):
+            params["q"] = str(query)
 
         if not is_undefined(creation_date_from) or not is_undefined(creation_date_to):
             if not isinstance(creation_date_from, datetime):
