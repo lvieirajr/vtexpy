@@ -18,4 +18,5 @@ class LicenseManagerAPI(BaseAPI):
             environment=self.ENVIRONMENT,
             endpoint="/api/vlm/account",
             config=self._config.with_overrides(**kwargs),
+            response_class=VTEXResponse,
         )

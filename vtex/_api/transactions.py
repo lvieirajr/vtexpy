@@ -18,14 +18,13 @@ class TransactionsAPI(BaseAPI):
         transaction_id: str,
         **kwargs: Any,
     ) -> VTEXListResponse:
-        return VTEXListResponse.factory(
-            vtex_response=self._request(
-                method="GET",
-                environment=self.ENVIRONMENT,
-                endpoint=f"/api/pvt/transactions/{transaction_id}/interactions/",
-                config=self._config.with_overrides(
-                    retries=LIST_TRANSACTION_INTERACTIONS_RETRIES,
-                    **kwargs,
-                ),
+        return self._request(
+            method="GET",
+            environment=self.ENVIRONMENT,
+            endpoint=f"/api/pvt/transactions/{transaction_id}/interactions/",
+            config=self._config.with_overrides(
+                retries=LIST_TRANSACTION_INTERACTIONS_RETRIES,
+                **kwargs,
             ),
+            response_class=VTEXListResponse,
         )

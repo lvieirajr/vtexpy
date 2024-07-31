@@ -1,11 +1,13 @@
 from dataclasses import asdict, dataclass
 from json import JSONDecodeError
-from typing import Dict, Sequence, Union
+from typing import Dict, Sequence, TypeVar, Union
 
 from httpx import Request, Response
 
 from ._types import JSONType
 from ._utils import to_snake_case_deep
+
+VTEXResponseType = TypeVar("VTEXResponseType", bound="VTEXResponse", covariant=True)
 
 
 @dataclass
@@ -21,7 +23,7 @@ class VTEXRequest:
             request=request,
             method=str(request.method).upper(),
             url=str(request.url),
-            headers=request.headers,
+            headers=dict(request.headers),
         )
 
 
@@ -45,7 +47,7 @@ class VTEXResponse:
             response=response,
             data=to_snake_case_deep(data),
             status=int(response.status_code),
-            headers=response.headers,
+            headers=dict(response.headers),
         )
 
 
@@ -54,7 +56,8 @@ class VTEXListResponse(VTEXResponse):
     items: Sequence[JSONType]
 
     @classmethod
-    def factory(cls, vtex_response: VTEXResponse) -> "VTEXListResponse":
+    def factory(cls, response: Response) -> "VTEXListResponse":
+        vtex_response = VTEXResponse.factory(response)
         data = vtex_response.data
 
         if isinstance(data, list):
@@ -79,8 +82,8 @@ class VTEXPagination:
     next_page: Union[int, None]
 
     @classmethod
-    def factory(cls, vtex_response: VTEXResponse) -> "VTEXPagination":
-        data = vtex_response.data
+    def factory(cls, vtex_list_response: VTEXListResponse) -> "VTEXPagination":
+        data = vtex_list_response.data
 
         if isinstance(data, dict) and data.get("paging"):
             pagination = data["paging"]
@@ -103,12 +106,16 @@ class VTEXPagination:
 
 
 @dataclass
-class VTEXPaginatedListResponse(VTEXListResponse, VTEXPagination):
+class VTEXPaginatedListResponse(VTEXListResponse):
+    pagination: VTEXPagination
+
     @classmethod
-    def factory(cls, vtex_response: VTEXResponse) -> "VTEXPaginatedListResponse":
+    def factory(cls, response: Response) -> "VTEXPaginatedListResponse":
+        vtex_list_response = VTEXListResponse.factory(response)
+
         return cls(
-            **asdict(VTEXListResponse.factory(vtex_response)),
-            **asdict(VTEXPagination.factory(vtex_response)),
+            **asdict(vtex_list_response),
+            pagination=VTEXPagination.factory(vtex_list_response),
         )
 
 
@@ -117,15 +124,19 @@ class VTEXScroll:
     token: Union[str, None]
 
     @classmethod
-    def factory(cls, vtex_response: VTEXResponse) -> "VTEXScroll":
+    def factory(cls, vtex_list_response: VTEXListResponse) -> "VTEXScroll":
         return cls(token=None)
 
 
 @dataclass
-class VTEXScrollListResponse(VTEXListResponse, VTEXScroll):
+class VTEXScrollListResponse(VTEXListResponse):
+    scroll: VTEXScroll
+
     @classmethod
-    def factory(cls, vtex_response: VTEXResponse) -> "VTEXScrollListResponse":
+    def factory(cls, response: Response) -> "VTEXScrollListResponse":
+        vtex_list_response = VTEXListResponse.factory(response)
+
         return cls(
-            **asdict(VTEXListResponse.factory(vtex_response)),
-            **asdict(VTEXScroll.factory(vtex_response)),
+            **asdict(vtex_list_response),
+            scroll=VTEXScroll.factory(vtex_list_response),
         )

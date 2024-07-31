@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Sequence, Union
+from typing import Any, Dict, Sequence, Union
 
 from .._constants import (
     LIST_FEED_ORDERS_MAX_PAGE_SIZE,
@@ -34,7 +34,7 @@ class OrdersAPI(BaseAPI):
         if page > LIST_ORDERS_MAX_PAGE:
             raise ValueError("List Orders endpoint can only return up to page 30")
 
-        params = {
+        params: Dict[str, Union[str, int]] = {
             "orderBy": order_by,
             "page": max(
                 min(page, LIST_ORDERS_MAX_PAGE),
@@ -58,18 +58,18 @@ class OrdersAPI(BaseAPI):
 
             params["f_creationDate"] = f"creationDate:[{start}Z TO {end}Z]"
 
-        response = VTEXPaginatedListResponse.factory(
-            vtex_response=self._request(
-                method="GET",
-                environment=self.ENVIRONMENT,
-                endpoint=f"/api/oms/pvt/orders/",
-                params=params,
-                config=self._config.with_overrides(**kwargs),
-            )
+        response = self._request(
+            method="GET",
+            environment=self.ENVIRONMENT,
+            endpoint="/api/oms/pvt/orders/",
+            params=params,
+            config=self._config.with_overrides(**kwargs),
+            response_class=VTEXPaginatedListResponse,
         )
 
-        if isinstance(response.next_page, int) and response.next_page > 30:
-            response.next_page = None
+        pagination = response.pagination
+        if isinstance(pagination.next_page, int) and pagination.next_page > 30:
+            pagination.next_page = None
 
         return response
 
@@ -79,6 +79,7 @@ class OrdersAPI(BaseAPI):
             environment=self.ENVIRONMENT,
             endpoint=f"/api/oms/pvt/orders/{order_id}",
             config=self._config.with_overrides(**kwargs),
+            response_class=VTEXResponse,
         )
 
     def list_feed_orders(
@@ -86,19 +87,18 @@ class OrdersAPI(BaseAPI):
         page_size: int = LIST_FEED_ORDERS_MAX_PAGE_SIZE,
         **kwargs: Any,
     ) -> VTEXListResponse:
-        return VTEXListResponse.factory(
-            vtex_response=self._request(
-                method="GET",
-                environment=self.ENVIRONMENT,
-                endpoint=f"/api/orders/feed/",
-                params={
-                    "maxlot": max(
-                        min(page_size, LIST_FEED_ORDERS_MAX_PAGE_SIZE),
-                        MIN_PAGE_SIZE,
-                    ),
-                },
-                config=self._config.with_overrides(**kwargs),
-            )
+        return self._request(
+            method="GET",
+            environment=self.ENVIRONMENT,
+            endpoint="/api/orders/feed/",
+            params={
+                "maxlot": max(
+                    min(page_size, LIST_FEED_ORDERS_MAX_PAGE_SIZE),
+                    MIN_PAGE_SIZE,
+                ),
+            },
+            config=self._config.with_overrides(**kwargs),
+            response_class=VTEXListResponse,
         )
 
     def commit_feed_orders(self, handles: Sequence[str], **kwargs: Any) -> VTEXResponse:
@@ -115,7 +115,8 @@ class OrdersAPI(BaseAPI):
         return self._request(
             method="POST",
             environment=self.ENVIRONMENT,
-            endpoint=f"/api/orders/feed/",
+            endpoint="/api/orders/feed/",
             json={"handles": handles},
             config=self._config.with_overrides(**kwargs),
+            response_class=VTEXResponse,
         )

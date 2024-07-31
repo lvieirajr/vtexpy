@@ -1,7 +1,7 @@
 from http import HTTPStatus
 from json import JSONDecodeError
 from logging import WARNING
-from typing import Any, Union
+from typing import Any, Union, Type, cast
 from urllib.parse import urljoin
 
 from httpx import (
@@ -13,6 +13,14 @@ from httpx import (
     Response,
     StreamError,
 )
+from httpx._types import(
+    CookieTypes,
+    HeaderTypes,
+    QueryParamTypes,
+    RequestContent,
+    RequestData,
+    RequestFiles,
+)
 from tenacity import (
     before_sleep_log,
     retry,
@@ -23,18 +31,10 @@ from tenacity import (
 
 from .._config import Config
 from .._constants import APP_KEY_HEADER, APP_TOKEN_HEADER
-from .._dto import VTEXResponse
+from .._dto import VTEXResponse, VTEXResponseType
 from .._exceptions import VTEXRequestError, VTEXResponseError
 from .._logging import get_logger
-from .._types import (
-    CookieTypes,
-    HeaderTypes,
-    HttpMethodTypes,
-    QueryParamTypes,
-    RequestContent,
-    RequestData,
-    RequestFiles,
-)
+from .._types import HTTPMethodType
 from .._utils import redact_headers
 
 
@@ -49,7 +49,7 @@ class BaseAPI:
 
     def _request(
         self,
-        method: HttpMethodTypes,
+        method: HTTPMethodType,
         environment: str,
         endpoint: str,
         headers: Union[HeaderTypes, None] = None,
@@ -60,7 +60,8 @@ class BaseAPI:
         content: Union[RequestContent, None] = None,
         files: Union[RequestFiles, None] = None,
         config: Union[Config, None] = None,
-    ) -> VTEXResponse:
+        response_class: Union[Type[VTEXResponseType], None] = None,
+    ) -> VTEXResponseType:
         request_config = self._get_config(config=config)
         url = self._get_url(
             config=request_config,
@@ -87,7 +88,7 @@ class BaseAPI:
         def _send_request() -> Response:
             with Client(timeout=request_config.get_timeout()) as client:
                 return client.request(
-                    method,
+                    method.upper(),
                     url,
                     headers=headers,
                     cookies=cookies,
@@ -112,14 +113,17 @@ class BaseAPI:
 
             self._logger.error(str(exception), extra=details, exc_info=True)
 
-            raise VTEXRequestError(**details) from None
+            raise VTEXRequestError(**details) from None  # type: ignore[arg-type]
         else:
-            response.headers = redact_headers(dict(response.headers))
-            response.request.headers = headers = redact_headers(dict(headers))
+            response.headers = Headers(redact_headers(dict(response.headers)))
+            response.request.headers = headers = Headers(redact_headers(dict(headers)))
 
             self._raise_from_response(response=response, config=request_config)
 
-            return VTEXResponse.factory(response=response)
+            return cast(
+                VTEXResponseType,
+                (response_class or VTEXResponse).factory(response),
+            )
 
     def _get_config(self, config: Union[Config, None]) -> Config:
         return config or self._config

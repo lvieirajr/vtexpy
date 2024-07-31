@@ -1,15 +1,16 @@
-from typing import Any, Union
+from typing import Any, Type, Union
 
-from .._dto import VTEXResponse
-from .._types import (
+from httpx._types import(
     CookieTypes,
     HeaderTypes,
-    HttpMethodTypes,
     QueryParamTypes,
     RequestContent,
     RequestData,
     RequestFiles,
 )
+
+from .._dto import VTEXResponseType
+from .._types import HTTPMethodType
 from .base import BaseAPI
 
 
@@ -21,7 +22,7 @@ class CustomAPI(BaseAPI):
 
     def request(
         self,
-        method: HttpMethodTypes,
+        method: HTTPMethodType,
         environment: str,
         endpoint: str,
         headers: Union[HeaderTypes, None] = None,
@@ -31,8 +32,9 @@ class CustomAPI(BaseAPI):
         data: Union[RequestData, None] = None,
         content: Union[RequestContent, None] = None,
         files: Union[RequestFiles, None] = None,
+        response_class: Union[Type[VTEXResponseType], None] = None,
         **kwargs: Any,
-    ) -> VTEXResponse:
+    ) -> VTEXResponseType:
         return self._request(
             method=method,
             environment=environment,
@@ -45,4 +47,5 @@ class CustomAPI(BaseAPI):
             content=content,
             files=files,
             config=self._config.with_overrides(**kwargs),
+            response_class=response_class,
         )

@@ -18,7 +18,10 @@ class UndefinedType:
     pass
 
 
-HttpMethodTypes = Literal["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+HTTPMethodType = Literal[
+    "DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT",
+    "delete", "get", "head", "options", "patch", "post", "put",
+]
 
 PrimitiveTypes = Union[None, bool, int, float, str]
 PrimitiveSequenceType = Sequence[PrimitiveTypes]

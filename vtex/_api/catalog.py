@@ -21,16 +21,15 @@ class CatalogAPI(BaseAPI):
         is_better_scope: Union[bool, UndefinedType] = UNDEFINED,
         **kwargs: Any,
     ) -> VTEXListResponse:
-        return VTEXListResponse.factory(
-            vtex_response=self._request(
-                method="GET",
-                environment=self.ENVIRONMENT,
-                endpoint="/api/catalog_system/pvt/seller/list",
-                params=exclude_undefined_values({
-                    "sc": sales_channel,
-                    "sellerType": seller_type,
-                    "isBetterScope": is_better_scope,
-                }),
-                config=self._config.with_overrides(**kwargs),
-            ),
+        return self._request(
+            method="GET",
+            environment=self.ENVIRONMENT,
+            endpoint="/api/catalog_system/pvt/seller/list",
+            params=exclude_undefined_values({
+                "sc": sales_channel,
+                "sellerType": seller_type,
+                "isBetterScope": is_better_scope,
+            }),
+            config=self._config.with_overrides(**kwargs),
+            response_class=VTEXListResponse,
         )
