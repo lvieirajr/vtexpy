@@ -1,20 +1,17 @@
 from http import HTTPStatus
 from json import JSONDecodeError
 from logging import WARNING, Logger
-from typing import Any, Union, Type, cast
+from typing import Any, Type, Union, cast
 from urllib.parse import urljoin
 
 from httpx import (
     Client,
-    CookieConflict,
     Headers,
     HTTPError,
     HTTPStatusError,
-    InvalidURL,
     Response,
-    StreamError,
 )
-from httpx._types import(
+from httpx._types import (
     CookieTypes,
     HeaderTypes,
     QueryParamTypes,
@@ -30,8 +27,8 @@ from tenacity import (
     wait_exponential,
 )
 
-from .._config import Config
-from .._constants import APP_KEY_HEADER, APP_TOKEN_HEADER, RETRIABLE_STATUSES
+from .._config import Config  # type: ignore[attr-defined]
+from .._constants import APP_KEY_HEADER, APP_TOKEN_HEADER
 from .._dto import VTEXResponse, VTEXResponseType
 from .._exceptions import VTEXRequestError, VTEXResponseError
 from .._logging import get_child_logger, get_logger
@@ -78,20 +75,25 @@ class BaseAPI:
             endpoint=endpoint,
         )
         headers = self._get_headers(config=request_config, headers=headers)
+        retry_statuses = set(request_config.get_retry_statuses())
 
         @retry(
             stop=stop_after_attempt(
-                max_attempt_number=request_config.get_retries() + 1,
+                max_attempt_number=request_config.get_retry_attempts() + 1,
             ),
-            wait=wait_exponential(multiplier=1, max=64, exp_base=2, min=1),
-            retry=retry_if_exception_type(
-                exception_types=(HTTPError, InvalidURL, CookieConflict, StreamError),
+            wait=wait_exponential(
+                min=request_config.get_retry_backoff_min(),
+                max=request_config.get_retry_backoff_max(),
+                exp_base=request_config.get_retry_backoff_exponential(),
             ),
+            retry=retry_if_exception_type(exception_types=HTTPError),
             before_sleep=before_sleep_log(
                 logger=self._logger,
                 log_level=WARNING,
                 exc_info=True,
-            ),
+            )
+            if request_config.get_retry_logs()
+            else None,
             reraise=True,
         )
         def send_vtex_request() -> Response:
@@ -108,35 +110,31 @@ class BaseAPI:
                     files=files,
                 )
 
-                if response.status_code in RETRIABLE_STATUSES:
+                if response.status_code in retry_statuses:
                     response.raise_for_status()
 
                 return response
 
         try:
             response = send_vtex_request()
-        except (HTTPError, InvalidURL, CookieConflict, StreamError) as exception:
-            if (
-                isinstance(exception, HTTPStatusError)
-                and exception.response.status_code in RETRIABLE_STATUSES
-            ):
-                request, response = exception.request, exception.response
-            else:
-                headers = redact_headers(dict(headers))
+        except HTTPStatusError as exception:
+            response = exception.response
+        except HTTPError as exception:
+            headers = redact_headers(dict(headers))
 
-                details = {
-                    "exception": exception,
-                    "method": str(method).upper(),
-                    "url": str(url),
-                    "headers": headers,
-                }
+            details = {
+                "exception": exception,
+                "method": str(method).upper(),
+                "url": str(url),
+                "headers": headers,
+            }
 
-                self._logger.error(str(exception), extra=details, exc_info=True)
+            self._logger.error(str(exception), extra=details, exc_info=True)
 
-                raise VTEXRequestError(**details) from None  # type: ignore[arg-type]
+            raise VTEXRequestError(**details) from None  # type: ignore[arg-type]
 
+        response.request.headers = headers = Headers(redact_headers(dict(headers)))
         response.headers = Headers(redact_headers(dict(response.headers)))
-        response.request.headers = Headers(redact_headers(dict(headers)))
 
         self._raise_from_response(response=response, config=request_config)
 

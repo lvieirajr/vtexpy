@@ -14,7 +14,7 @@ UNDEFINED = UndefinedType()
 
 
 def is_nullish_str(value: str) -> bool:
-    return not value or value.lower() in {"null", "none", "nil"}
+    return value.lower() in {"", "null", "none", "nil"}
 
 
 def is_undefined(value: Any) -> bool:

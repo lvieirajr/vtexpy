@@ -1,10 +1,10 @@
 from dataclasses import asdict, dataclass
 from json import JSONDecodeError
-from typing import Dict, Sequence, TypeVar, Union
+from typing import Dict, TypeVar, Union
 
 from httpx import Request, Response
 
-from ._types import JSONType
+from ._types import IterableType, JSONType
 from ._utils import to_snake_case_deep
 
 VTEXResponseType = TypeVar("VTEXResponseType", bound="VTEXResponse", covariant=True)
@@ -53,7 +53,7 @@ class VTEXResponse:
 
 @dataclass
 class VTEXListResponse(VTEXResponse):
-    items: Sequence[JSONType]
+    items: IterableType[JSONType]
 
     @classmethod
     def factory(cls, response: Response) -> "VTEXListResponse":

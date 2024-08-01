@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, Sequence, Union
+from typing import Any, Dict, Union
 
 from .._constants import (
     LIST_FEED_ORDERS_MAX_PAGE_SIZE,
@@ -9,7 +9,7 @@ from .._constants import (
     MIN_PAGE_SIZE,
 )
 from .._dto import VTEXListResponse, VTEXPaginatedListResponse, VTEXResponse
-from .._types import UndefinedType
+from .._types import IterableType, UndefinedType
 from .._utils import UNDEFINED, is_undefined, now, three_years_ago
 from .base import BaseAPI
 
@@ -111,7 +111,11 @@ class OrdersAPI(BaseAPI):
             response_class=VTEXListResponse,
         )
 
-    def commit_feed_orders(self, handles: Sequence[str], **kwargs: Any) -> VTEXResponse:
+    def commit_feed_orders(
+        self,
+        handles: IterableType[str],
+        **kwargs: Any,
+    ) -> VTEXResponse:
         if not handles:
             raise ValueError(
                 "At least one handle must be provided to commit to the feed"
