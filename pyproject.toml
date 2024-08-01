@@ -31,7 +31,7 @@ classifiers = [
 packages = [
     {include = "vtex"},
 ]
-version = "0.0.0a17"
+version = "0.0.0a18"
 
 [build-system]
 requires = ["poetry-core"]

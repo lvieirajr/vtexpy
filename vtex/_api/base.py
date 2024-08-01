@@ -30,7 +30,7 @@ from tenacity import (
 )
 
 from .._config import Config
-from .._constants import APP_KEY_HEADER, APP_TOKEN_HEADER
+from .._constants import APP_KEY_HEADER, APP_TOKEN_HEADER, RETRIABLE_STATUSES
 from .._dto import VTEXResponse, VTEXResponseType
 from .._exceptions import VTEXRequestError, VTEXResponseError
 from .._logging import get_logger
@@ -87,7 +87,7 @@ class BaseAPI:
         )
         def _send_request() -> Response:
             with Client(timeout=request_config.get_timeout()) as client:
-                return client.request(
+                response = client.request(
                     method.upper(),
                     url,
                     headers=headers,
@@ -98,6 +98,11 @@ class BaseAPI:
                     content=content,
                     files=files,
                 )
+
+                if response.status_code in RETRIABLE_STATUSES:
+                    response.raise_for_status()
+
+                return response
 
         try:
             response = _send_request()
