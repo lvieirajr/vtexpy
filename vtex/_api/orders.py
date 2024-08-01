@@ -25,8 +25,10 @@ class OrdersAPI(BaseAPI):
     def list_orders(
         self,
         query: Union[str, UndefinedType] = UNDEFINED,
+        search: Union[str, UndefinedType] = UNDEFINED,
         creation_date_from: Union[datetime, UndefinedType] = UNDEFINED,
         creation_date_to: Union[datetime, UndefinedType] = UNDEFINED,
+        incomplete: bool = False,
         order_by: str = "creationDate,desc",
         page: int = LIST_ORDERS_START_PAGE,
         page_size: int = LIST_ORDERS_MAX_PAGE_SIZE,
@@ -36,6 +38,7 @@ class OrdersAPI(BaseAPI):
             raise ValueError("List Orders endpoint can only return up to page 30")
 
         params: Dict[str, Union[str, int]] = {
+            "incompleteOrders": incomplete,
             "orderBy": order_by,
             "page": max(
                 min(page, LIST_ORDERS_MAX_PAGE),
@@ -49,6 +52,9 @@ class OrdersAPI(BaseAPI):
 
         if not is_undefined(query):
             params["q"] = str(query)
+
+        if not is_undefined(search):
+            params["searchField"] = str(search)
 
         if not is_undefined(creation_date_from) or not is_undefined(creation_date_to):
             if not isinstance(creation_date_from, datetime):
