@@ -1,6 +1,6 @@
 from http import HTTPStatus
 from json import JSONDecodeError
-from logging import WARNING
+from logging import WARNING, Logger
 from typing import Any, Union, Type, cast
 from urllib.parse import urljoin
 
@@ -9,6 +9,7 @@ from httpx import (
     CookieConflict,
     Headers,
     HTTPError,
+    HTTPStatusError,
     InvalidURL,
     Response,
     StreamError,
@@ -33,7 +34,7 @@ from .._config import Config
 from .._constants import APP_KEY_HEADER, APP_TOKEN_HEADER, RETRIABLE_STATUSES
 from .._dto import VTEXResponse, VTEXResponseType
 from .._exceptions import VTEXRequestError, VTEXResponseError
-from .._logging import get_logger
+from .._logging import get_child_logger, get_logger
 from .._types import HTTPMethodType
 from .._utils import redact_headers
 
@@ -43,9 +44,17 @@ class BaseAPI:
     Base client for VTEX API.
     """
 
-    def __init__(self, config: Union[Config, None] = None) -> None:
+    def __init__(
+        self,
+        config: Union[Config, None] = None,
+        logger: Union[Logger, None] = None,
+    ) -> None:
         self._config = config or Config()
-        self._logger = get_logger(type(self).__name__)
+        self._logger = (
+            get_child_logger(logger, type(self).__name__)
+            if logger
+            else get_logger(type(self).__name__)
+        )
 
     def _request(
         self,
@@ -85,7 +94,7 @@ class BaseAPI:
             ),
             reraise=True,
         )
-        def _send_request() -> Response:
+        def send_vtex_request() -> Response:
             with Client(timeout=request_config.get_timeout()) as client:
                 response = client.request(
                     method.upper(),
@@ -105,30 +114,36 @@ class BaseAPI:
                 return response
 
         try:
-            response = _send_request()
+            response = send_vtex_request()
         except (HTTPError, InvalidURL, CookieConflict, StreamError) as exception:
-            headers = redact_headers(dict(headers))
+            if (
+                isinstance(exception, HTTPStatusError)
+                and exception.response.status_code in RETRIABLE_STATUSES
+            ):
+                request, response = exception.request, exception.response
+            else:
+                headers = redact_headers(dict(headers))
 
-            details = {
-                "exception": exception,
-                "method": str(method).upper(),
-                "url": str(url),
-                "headers": headers,
-            }
+                details = {
+                    "exception": exception,
+                    "method": str(method).upper(),
+                    "url": str(url),
+                    "headers": headers,
+                }
 
-            self._logger.error(str(exception), extra=details, exc_info=True)
+                self._logger.error(str(exception), extra=details, exc_info=True)
 
-            raise VTEXRequestError(**details) from None  # type: ignore[arg-type]
-        else:
-            response.headers = Headers(redact_headers(dict(response.headers)))
-            response.request.headers = headers = Headers(redact_headers(dict(headers)))
+                raise VTEXRequestError(**details) from None  # type: ignore[arg-type]
 
-            self._raise_from_response(response=response, config=request_config)
+        response.headers = Headers(redact_headers(dict(response.headers)))
+        response.request.headers = Headers(redact_headers(dict(headers)))
 
-            return cast(
-                VTEXResponseType,
-                (response_class or VTEXResponse).factory(response),
-            )
+        self._raise_from_response(response=response, config=request_config)
+
+        return cast(
+            VTEXResponseType,
+            (response_class or VTEXResponse).factory(response),
+        )
 
     def _get_config(self, config: Union[Config, None]) -> Config:
         return config or self._config

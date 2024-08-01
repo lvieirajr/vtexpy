@@ -10,6 +10,7 @@ from ._api import (
     TransactionsAPI,
 )
 from ._config import Config
+from ._logging import get_logger
 from ._types import UndefinedType
 from ._utils import UNDEFINED
 
@@ -29,7 +30,7 @@ class VTEX:
         retries: Union[int, UndefinedType] = UNDEFINED,
         raise_for_status: Union[bool, UndefinedType] = UNDEFINED,
     ) -> None:
-        self.config = Config(
+        self._config = Config(
             account_name=account_name,
             app_key=app_key,
             app_token=app_token,
@@ -37,27 +38,28 @@ class VTEX:
             retries=retries,
             raise_for_status=raise_for_status,
         )
+        self._logger = get_logger("client")
 
     @cached_property
     def custom(self) -> CustomAPI:
-        return CustomAPI(config=self.config)
+        return CustomAPI(config=self._config, logger=self._logger)
 
     @cached_property
     def catalog(self) -> CatalogAPI:
-        return CatalogAPI(config=self.config)
+        return CatalogAPI(config=self._config, logger=self._logger)
 
     @cached_property
     def license_manager(self) -> LicenseManagerAPI:
-        return LicenseManagerAPI(config=self.config)
+        return LicenseManagerAPI(config=self._config, logger=self._logger)
 
     @cached_property
     def logistics(self) -> LogisticsAPI:
-        return LogisticsAPI(config=self.config)
+        return LogisticsAPI(config=self._config, logger=self._logger)
 
     @cached_property
     def orders(self) -> OrdersAPI:
-        return OrdersAPI(config=self.config)
+        return OrdersAPI(config=self._config, logger=self._logger)
 
     @cached_property
     def transactions(self) -> TransactionsAPI:
-        return TransactionsAPI(config=self.config)
+        return TransactionsAPI(config=self._config, logger=self._logger)
