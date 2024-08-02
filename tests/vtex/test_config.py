@@ -6,6 +6,14 @@ from vtex._constants import (
     ACCOUNT_NAME_ENV_VAR,
     APP_KEY_ENV_VAR,
     APP_TOKEN_ENV_VAR,
+    DEFAULT_RAISE_FOR_STATUS,
+    DEFAULT_RETRY_ATTEMPTS,
+    DEFAULT_RETRY_BACKOFF_EXPONENTIAL,
+    DEFAULT_RETRY_BACKOFF_MAX,
+    DEFAULT_RETRY_BACKOFF_MIN,
+    DEFAULT_RETRY_LOGS,
+    DEFAULT_RETRY_STATUSES,
+    DEFAULT_TIMEOUT,
     RAISE_FOR_STATUS_ENV_VAR,
     RETRY_ATTEMPTS_ENV_VAR,
     RETRY_BACKOFF_EXPONENTIAL_ENV_VAR,
@@ -210,14 +218,14 @@ class TestInit(UnitTest):
             Config()
 
     # RETRY BACKOFF MAX ----------------------------------------------------------------
-    @mark.parametrize("retry_backoff_max", [UNDEFINED, 0.1, 1, 1.0, 1.1])
+    @mark.parametrize("retry_backoff_max", [UNDEFINED, 9.9, 10, 10.0, 10.1])
     def test_valid_value_to_parse_retry_backoff_max(self, retry_backoff_max):
         try:
             Config(retry_backoff_max=retry_backoff_max)
         except Exception as exception:
             fail(f"Raised {type(exception).__name__}")
 
-    @mark.parametrize("retry_backoff_max", [UNDEFINED, "0.1", "1", "1.0", "1.1"])
+    @mark.parametrize("retry_backoff_max", [UNDEFINED, "9.9", "10", "10.0", "10.1"])
     def test_valid_env_var_to_parse_retry_backoff_max(
         self,
         retry_backoff_max,
@@ -245,7 +253,10 @@ class TestInit(UnitTest):
             Config()
 
     # RETRY BACKOFF EXPONENTIAL --------------------------------------------------------
-    @mark.parametrize("retry_backoff_exponential", [UNDEFINED, 1, 1.0, 1.1])
+    @mark.parametrize(
+        "retry_backoff_exponential",
+        [UNDEFINED, True, False, 1, 1.0, 1.1],
+    )
     def test_valid_value_to_parse_retry_backoff_exponential(
         self,
         retry_backoff_exponential,
@@ -255,7 +266,10 @@ class TestInit(UnitTest):
         except Exception as exception:
             fail(f"Raised {type(exception).__name__}")
 
-    @mark.parametrize("retry_backoff_exponential", [UNDEFINED, "1", "1.0", "1.1"])
+    @mark.parametrize(
+        "retry_backoff_exponential",
+        [UNDEFINED, "y", "n", "1", "1.0", "1.1"],
+    )
     def test_valid_env_var_to_parse_retry_backoff_exponential(
         self,
         retry_backoff_exponential,
@@ -402,6 +416,10 @@ class TestInit(UnitTest):
         with raises(ValueError):
             Config()
 
+    def test_when_min_backfoff_is_higher_init_than_max_raises_value_error(self):
+        with raises(ValueError):
+            Config(retry_backoff_min=10.0, retry_backoff_max=9.0)
+
 
 class TestGetValues(UnitTest):
     def test_when_account_name_is_undefined_get_account_name_raises_value_error(self):
@@ -422,14 +440,102 @@ class TestGetValues(UnitTest):
         with raises(ValueError):
             config.get_app_token()
 
+    @mark.parametrize(
+        "account_name,expected",
+        [("test", "test"), ("account_name", "account_name")],
+    )
+    def test_get_account_name(self, account_name, expected):
+        config = Config(account_name=account_name)
+        assert config.get_account_name() == expected
 
-    # # ACCOUNT NAME ---------------------------------------------------------------------
-    # @mark.parametrize(
-    #     "account_name",
-    #     [(UNDEFINED, ), "account_name"],
-    # )
-    # def test_get_account_name(self, account_name):
-    #     try:
-    #         Config(account_name=account_name)
-    #     except Exception as exception:
-    #         fail(f"Raised {type(exception).__name__}")
+    @mark.parametrize("app_key,expected", [("test", "test"), ("app_key", "app_key")])
+    def test_get_app_key(self, app_key, expected):
+        config = Config(app_key=app_key)
+        assert config.get_app_key() == expected
+
+    @mark.parametrize(
+        "app_token,expected",
+        [("test", "test"), ("app_token", "app_token")],
+    )
+    def test_get_app_token(self, app_token, expected):
+        config = Config(app_token=app_token)
+        assert config.get_app_token() == expected
+
+    @mark.parametrize(
+        "timeout,expected",
+        [(UNDEFINED, DEFAULT_TIMEOUT), (None, None), (0.1, 0.1), (1, 1.0)],
+    )
+    def test_get_timeout(self, timeout, expected):
+        config = Config(timeout=timeout)
+        assert config.get_timeout() == expected
+
+    @mark.parametrize(
+        "retry_attempts,expected",
+        [(UNDEFINED, DEFAULT_RETRY_ATTEMPTS), (0, 0), (1, 1)],
+    )
+    def test_get_retry_attempts(self, retry_attempts, expected):
+        config = Config(retry_attempts=retry_attempts)
+        assert config.get_retry_attempts() == expected
+
+    @mark.parametrize(
+        "retry_backoff_min,expected",
+        [(UNDEFINED, DEFAULT_RETRY_BACKOFF_MIN), (0.1, 0.1), (1, 1.0)],
+    )
+    def test_get_retry_backoff_min(self, retry_backoff_min, expected):
+        config = Config(retry_backoff_min=retry_backoff_min)
+        assert config.get_retry_backoff_min() == expected
+
+    @mark.parametrize(
+        "retry_backoff_max,expected",
+        [(UNDEFINED, DEFAULT_RETRY_BACKOFF_MAX), (9.9, 9.9), (10, 10.0)],
+    )
+    def test_get_retry_backoff_max(self, retry_backoff_max, expected):
+        config = Config(retry_backoff_max=retry_backoff_max)
+        assert config.get_retry_backoff_max() == expected
+
+    @mark.parametrize(
+        "retry_backoff_exponential,expected",
+        [
+            (UNDEFINED, DEFAULT_RETRY_BACKOFF_EXPONENTIAL),
+            (True, DEFAULT_RETRY_BACKOFF_EXPONENTIAL),
+            (False, 1.0),
+            (1, 1.0),
+            (1.1, 1.1),
+        ],
+    )
+    def test_get_retry_backoff_exponential(
+        self,
+        retry_backoff_exponential,
+        expected,
+    ):
+        config = Config(retry_backoff_exponential=retry_backoff_exponential)
+        assert config.get_retry_backoff_exponential() == expected
+
+    @mark.parametrize(
+        "retry_statuses,expected",
+        [
+            (UNDEFINED, DEFAULT_RETRY_STATUSES),
+            ([], []),
+            ([408], [408]),
+            ([408, 429], [408, 429]),
+        ],
+    )
+    def test_get_retry_statuses(self, retry_statuses, expected):
+        config = Config(retry_statuses=retry_statuses)
+        assert config.get_retry_statuses() == expected
+
+    @mark.parametrize(
+        "retry_logs,expected",
+        [(UNDEFINED, DEFAULT_RETRY_LOGS), (True, True), (False, False)],
+    )
+    def test_get_retry_logs(self, retry_logs, expected):
+        config = Config(retry_logs=retry_logs)
+        assert config.get_retry_logs() == expected
+
+    @mark.parametrize(
+        "raise_for_status,expected",
+        [(UNDEFINED, DEFAULT_RAISE_FOR_STATUS), (True, True), (False, False)],
+    )
+    def test_get_raise_for_status(self, raise_for_status, expected):
+        config = Config(raise_for_status=raise_for_status)
+        assert config.get_raise_for_status() == expected

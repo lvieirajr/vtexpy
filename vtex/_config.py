@@ -56,6 +56,9 @@ class Config:
         self._retry_logs = self._parse_retry_logs(retry_logs)
         self._raise_for_status = self._parse_raise_for_status(raise_for_status)
 
+        if self.get_retry_backoff_min() > self.get_retry_backoff_max():
+            raise ValueError("Minimum backoff has to be lower than maximum backoff")
+
     def with_overrides(
         self,
         account_name: Union[str, UndefinedType] = UNDEFINED,
@@ -344,12 +347,17 @@ class Config:
         retry_backoff_exponential: Union[bool, float, int, UndefinedType] = UNDEFINED,
     ) -> Union[float, UndefinedType]:
         if (
-            isinstance(retry_backoff_exponential, (float, int))
+            not isinstance(retry_backoff_exponential, bool)
+            and isinstance(retry_backoff_exponential, (float, int))
             and retry_backoff_exponential >= 1
         ):
             return float(retry_backoff_exponential)
         elif isinstance(retry_backoff_exponential, bool):
-            return retry_backoff_exponential
+            return (
+                DEFAULT_RETRY_BACKOFF_EXPONENTIAL
+                if retry_backoff_exponential
+                else 1.0
+            )
 
         if is_undefined(retry_backoff_exponential):
             env_retry_backoff_exponential = getenv(
@@ -369,12 +377,15 @@ class Config:
                 pass
 
             try:
-                return str_to_bool(env_retry_backoff_exponential)
+                converted_value = str_to_bool(env_retry_backoff_exponential)
+                return DEFAULT_RETRY_BACKOFF_EXPONENTIAL if converted_value else 1.0
             except ValueError:
-                raise ValueError(
-                    f"Invalid value for {RETRY_BACKOFF_EXPONENTIAL_ENV_VAR}: "
-                    f"{env_retry_backoff_exponential}",
-                ) from None
+                pass
+
+            raise ValueError(
+                f"Invalid value for {RETRY_BACKOFF_EXPONENTIAL_ENV_VAR}: "
+                f"{env_retry_backoff_exponential}",
+            ) from None
 
         raise ValueError(
             f"Invalid value for retry_backoff_exponential: {retry_backoff_exponential}",
@@ -385,7 +396,8 @@ class Config:
         retry_statuses: Union[IterableType[int], UndefinedType] = UNDEFINED,
     ) -> Union[IterableType[int], UndefinedType]:
         if isinstance(retry_statuses, (list, set, tuple)) and all(
-            isinstance(status, int) for status in retry_statuses
+            isinstance(status, int) and 100 <= status <= 599
+            for status in retry_statuses
         ):
             return retry_statuses
 
