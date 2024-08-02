@@ -245,10 +245,10 @@ class Config:
                 return None
 
             try:
-                env_timeout = float(env_timeout)
+                converted_value = float(env_timeout)
 
-                if env_timeout > 0:
-                    return env_timeout
+                if converted_value > 0:
+                    return converted_value
             except ValueError:
                 pass
 
@@ -270,10 +270,10 @@ class Config:
                 return env_retry_attempts
 
             try:
-                env_retry_attempts = int(env_retry_attempts)
+                converted_value = int(env_retry_attempts)
 
-                if env_retry_attempts >= 0:
-                    return env_retry_attempts
+                if converted_value >= 0:
+                    return converted_value
             except ValueError:
                 pass
 
@@ -297,10 +297,10 @@ class Config:
                 return env_retry_backoff_min
 
             try:
-                env_retry_backoff_min = float(env_retry_backoff_min)
+                converted_value = float(env_retry_backoff_min)
 
-                if env_retry_backoff_min > 0:
-                    return env_retry_backoff_min
+                if converted_value > 0:
+                    return converted_value
             except ValueError:
                 pass
 
@@ -325,10 +325,10 @@ class Config:
                 return env_retry_backoff_max
 
             try:
-                env_retry_backoff_max = float(env_retry_backoff_max)
+                converted_value = float(env_retry_backoff_max)
 
-                if env_retry_backoff_max > 0:
-                    return env_retry_backoff_max
+                if converted_value > 0:
+                    return converted_value
             except ValueError:
                 pass
 
@@ -361,10 +361,10 @@ class Config:
                 return env_retry_backoff_exponential
 
             try:
-                env_retry_backoff_exponential = float(env_retry_backoff_exponential)
+                converted_value = float(env_retry_backoff_exponential)
 
-                if env_retry_backoff_exponential >= 1:
-                    return env_retry_backoff_exponential
+                if converted_value >= 1:
+                    return converted_value
             except ValueError:
                 pass
 
@@ -396,11 +396,20 @@ class Config:
                 return env_retry_statuses
 
             try:
-                return [int(status) for status in env_retry_statuses.split(",")]
+                converted_values = [
+                    int(status.strip())
+                    for status in env_retry_statuses.split(",")
+                    if status.strip()
+                ]
+
+                if all(100 <= value <= 599 for value in converted_values):
+                    return converted_values
             except ValueError:
-                raise ValueError(
-                    f"Invalid value for {RETRY_STATUSES_ENV_VAR}: {env_retry_statuses}",
-                ) from None
+                pass
+
+            raise ValueError(
+                f"Invalid value for {RETRY_STATUSES_ENV_VAR}: {env_retry_statuses}",
+            ) from None
 
         raise ValueError(f"Invalid value for retry_statuses: {retry_statuses}")
 
