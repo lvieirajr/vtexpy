@@ -402,4 +402,34 @@ class TestInit(UnitTest):
         with raises(ValueError):
             Config()
 
+
 class TestGetValues(UnitTest):
+    def test_when_account_name_is_undefined_get_account_name_raises_value_error(self):
+        config = Config(account_name=UNDEFINED)
+
+        with raises(ValueError):
+            config.get_account_name()
+
+    def test_when_app_key_is_undefined_get_app_key_raises_value_error(self):
+        config = Config(app_key=UNDEFINED)
+
+        with raises(ValueError):
+            config.get_app_key()
+
+    def test_when_app_token_is_undefined_get_app_token_raises_value_error(self):
+        config = Config(app_token=UNDEFINED)
+
+        with raises(ValueError):
+            config.get_app_token()
+
+
+    # # ACCOUNT NAME ---------------------------------------------------------------------
+    # @mark.parametrize(
+    #     "account_name",
+    #     [(UNDEFINED, ), "account_name"],
+    # )
+    # def test_get_account_name(self, account_name):
+    #     try:
+    #         Config(account_name=account_name)
+    #     except Exception as exception:
+    #         fail(f"Raised {type(exception).__name__}")
