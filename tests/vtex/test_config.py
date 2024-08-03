@@ -210,7 +210,11 @@ class TestInit(UnitTest):
             Config(retry_backoff_min=retry_backoff_min)
 
     @mark.parametrize("retry_backoff_min", ["", "0", "0.0", "-1", "-1.1"])
-    def test_invalid_env_var_to_parse_retry_backoff_min(self, retry_backoff_min, monkeypatch):
+    def test_invalid_env_var_to_parse_retry_backoff_min(
+        self,
+        retry_backoff_min,
+        monkeypatch,
+    ):
         if not is_undefined(retry_backoff_min):
             monkeypatch.setenv(RETRY_BACKOFF_MIN_ENV_VAR, str(retry_backoff_min))
 
@@ -245,7 +249,11 @@ class TestInit(UnitTest):
             Config(retry_backoff_max=retry_backoff_max)
 
     @mark.parametrize("retry_backoff_max", ["", "0", "0.0", "-1", "-1.1"])
-    def test_invalid_env_var_to_parse_retry_backoff_max(self, retry_backoff_max, monkeypatch):
+    def test_invalid_env_var_to_parse_retry_backoff_max(
+        self,
+        retry_backoff_max,
+        monkeypatch,
+    ):
         if not is_undefined(retry_backoff_max):
             monkeypatch.setenv(RETRY_BACKOFF_MAX_ENV_VAR, str(retry_backoff_max))
 

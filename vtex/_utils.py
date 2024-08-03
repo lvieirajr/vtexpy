@@ -21,10 +21,6 @@ def is_undefined(value: Any) -> bool:
     return isinstance(value, UndefinedType)
 
 
-def is_iterable_type(value: Any) -> bool:
-    return isinstance(value, (list, set, tuple))
-
-
 def exclude_undefined_values(obj: Dict[Any, Any]) -> Dict[Any, Any]:
     return {key: value for key, value in obj.items() if not is_undefined(value)}
 

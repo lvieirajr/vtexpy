@@ -1,13 +1,13 @@
-from typing import Any, Union
+from typing import Any, Iterable, Union
 
 from .._constants import (
+    MIN_PAGE_SIZE,
     SEARCH_DOCUMENTS_MAX_PAGE_SIZE,
     SEARCH_DOCUMENTS_START_PAGE,
-    MIN_PAGE_SIZE,
 )
 from .._dto import VTEXPaginatedListResponse
 from .._types import IterableType, OrderingDirectionType, UndefinedType
-from .._utils import UNDEFINED, exclude_undefined_values, is_iterable_type, is_undefined
+from .._utils import UNDEFINED, exclude_undefined_values, is_undefined
 from .base import BaseAPI
 
 
@@ -37,7 +37,7 @@ class MasterDataAPI(BaseAPI):
 
         if is_undefined(fields):
             params["_fields"] = "all"
-        elif is_iterable_type(fields):
+        elif not isinstance(fields, str) and isinstance(fields, Iterable):
             params["_fields"] = ",".join(fields)
         else:
             params["_fields"] = fields

@@ -354,9 +354,7 @@ class Config:
             return float(retry_backoff_exponential)
         elif isinstance(retry_backoff_exponential, bool):
             return (
-                DEFAULT_RETRY_BACKOFF_EXPONENTIAL
-                if retry_backoff_exponential
-                else 1.0
+                DEFAULT_RETRY_BACKOFF_EXPONENTIAL if retry_backoff_exponential else 1.0
             )
 
         if is_undefined(retry_backoff_exponential):

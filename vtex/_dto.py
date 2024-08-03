@@ -85,9 +85,8 @@ class VTEXPagination:
     @classmethod
     def factory(cls, vtex_list_response: VTEXListResponse) -> "VTEXPagination":
         data, headers = vtex_list_response.data, vtex_list_response.headers
-        import ipdb; ipdb.set_trace();
 
-        total, pages, page_size, page = None, None, None, None
+        total, pages, page_size, page = -1, -1, -1, -1
         if isinstance(data, dict) and data.get("paging"):
             pagination = data["paging"]
             total = pagination.get("total")
@@ -103,7 +102,7 @@ class VTEXPagination:
             pages = ceil(total / page_size)
             page = end // page_size
 
-        if all(field is not None for field in {total, pages, page_size, page}):
+        if all(field != -1 for field in {total, pages, page_size, page}):
             return cls(
                 total=total,
                 pages=pages,
