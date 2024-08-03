@@ -6,6 +6,7 @@ from ._api import (
     CustomAPI,
     LicenseManagerAPI,
     LogisticsAPI,
+    MasterDataAPI,
     OrdersAPI,
     TransactionsAPI,
 )
@@ -65,6 +66,10 @@ class VTEX:
     @cached_property
     def logistics(self) -> LogisticsAPI:
         return LogisticsAPI(config=self._config, logger=self._logger)
+
+    @cached_property
+    def master_data(self) -> MasterDataAPI:
+        return MasterDataAPI(config=self._config, logger=self._logger)
 
     @cached_property
     def orders(self) -> OrdersAPI:

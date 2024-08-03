@@ -24,6 +24,8 @@ IterableType = Union[
     List[IterableValueType],
 ]
 
+OrderingDirectionType = Literal["ASC", "DESC", "asc", "desc"]
+
 HTTPMethodType = Literal[
     "DELETE",
     "GET",

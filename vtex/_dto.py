@@ -1,5 +1,6 @@
 from dataclasses import asdict, dataclass
 from json import JSONDecodeError
+from math import ceil
 from typing import Dict, TypeVar, Union
 
 from httpx import Request, Response
@@ -83,26 +84,36 @@ class VTEXPagination:
 
     @classmethod
     def factory(cls, vtex_list_response: VTEXListResponse) -> "VTEXPagination":
-        data = vtex_list_response.data
+        data, headers = vtex_list_response.data, vtex_list_response.headers
+        import ipdb; ipdb.set_trace();
 
+        total, pages, page_size, page = None, None, None, None
         if isinstance(data, dict) and data.get("paging"):
             pagination = data["paging"]
-        else:
-            raise ValueError(f"Not a valid paginated list response: {data}")
+            total = pagination.get("total")
+            pages = pagination.get("pages")
+            page_size = pagination.get("per_page")
+            page = pagination.get("page") or pagination.get("current_page")
+        elif "rest-content-range" in headers:
+            pagination = headers["rest-content-range"].split(" ")[-1]
+            item_range, total = pagination.split("/")
+            start, end = item_range.split("-")
+            start, end, total = int(start), int(end), int(total)
+            page_size = end - start
+            pages = ceil(total / page_size)
+            page = end // page_size
 
-        total = pagination.get("total")
-        pages = pagination.get("pages")
-        page_size = pagination.get("per_page")
-        page = pagination.get("page") or pagination.get("current_page")
+        if all(field is not None for field in {total, pages, page_size, page}):
+            return cls(
+                total=total,
+                pages=pages,
+                page_size=page_size,
+                page=page,
+                previous_page=page - 1 if page > 1 else None,
+                next_page=page + 1 if page < pages else None,
+            )
 
-        return cls(
-            total=total,
-            pages=pages,
-            page_size=page_size,
-            page=page,
-            previous_page=page - 1 if page > 1 else None,
-            next_page=page + 1 if page < pages else None,
-        )
+        raise ValueError(f"Not a valid paginated list response: {vtex_list_response}")
 
 
 @dataclass

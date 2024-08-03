@@ -9,7 +9,7 @@ from .._constants import (
     MIN_PAGE_SIZE,
 )
 from .._dto import VTEXListResponse, VTEXPaginatedListResponse, VTEXResponse
-from .._types import IterableType, UndefinedType
+from .._types import IterableType, OrderingDirectionType, UndefinedType
 from .._utils import UNDEFINED, is_undefined, now, three_years_ago
 from .base import BaseAPI
 
@@ -29,7 +29,8 @@ class OrdersAPI(BaseAPI):
         creation_date_from: Union[datetime, UndefinedType] = UNDEFINED,
         creation_date_to: Union[datetime, UndefinedType] = UNDEFINED,
         incomplete: bool = False,
-        order_by: str = "creationDate,desc",
+        order_by_field: str = "creationDate",
+        order_by_direction: OrderingDirectionType = "desc",
         page: int = LIST_ORDERS_START_PAGE,
         page_size: int = LIST_ORDERS_MAX_PAGE_SIZE,
         **kwargs: Any,
@@ -39,7 +40,7 @@ class OrdersAPI(BaseAPI):
 
         params: Dict[str, Union[str, int]] = {
             "incompleteOrders": incomplete,
-            "orderBy": order_by,
+            "orderBy": f"{order_by_field},{order_by_direction.lower()}",
             "page": max(
                 min(page, LIST_ORDERS_MAX_PAGE),
                 LIST_ORDERS_START_PAGE,
